@@ -1,0 +1,22 @@
+---
+description: Git maintenance and safety workflow
+alwaysApply: true
+---
+
+# Git Maintenance Rule
+
+- Keep repository state visible: run `git status` before and after meaningful changes.
+- Before commit, review both scope and content with `git diff` / `git diff --staged`.
+- Commit only related files for the current task; avoid mixing unrelated changes.
+- Write concise commit messages that describe intent and impact.
+- Push only when explicitly requested by the user.
+- Never run destructive git commands (`reset --hard`, force-push, history rewrite) unless the user explicitly asks.
+- If unexpected external changes appear, stop and ask how to proceed.
+
+## Preferred Flow
+
+1. Inspect: `git status` and relevant diffs.
+2. Stage only task-related files.
+3. Commit with clear message.
+4. Verify clean state or explain remaining changes.
+5. Push only on explicit user confirmation.
