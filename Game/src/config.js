@@ -4,6 +4,12 @@ export const ARENA = {
   margin: 24,
 };
 
+export const WORLD = {
+  width: 1600,
+  height: 960,
+  margin: 24,
+};
+
 export const PLAYER_CONFIG = {
   maxHp: 120,
   speed: 220,
