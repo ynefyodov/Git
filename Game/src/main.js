@@ -1225,7 +1225,8 @@ restartBtn.addEventListener("click", () => {
 });
 
 window.addEventListener("keydown", (event) => {
-  if (event.key.toLowerCase() === "e") {
+  const key = event.key.toLowerCase();
+  if (key === "e" || key === "у") {
     state.skillRequested = true;
   }
 });
