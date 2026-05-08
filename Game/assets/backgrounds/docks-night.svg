@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <defs>
+    <linearGradient id="night" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b2433"/>
+      <stop offset="100%" stop-color="#0f141f"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1f3a4d"/>
+      <stop offset="100%" stop-color="#274f63"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="540" fill="url(#night)"/>
+  <rect x="0" y="320" width="960" height="220" fill="url(#water)" opacity="0.85"/>
+  <rect x="0" y="300" width="960" height="24" fill="#2c3f52" opacity="0.55"/>
+  <rect x="120" y="240" width="720" height="18" fill="#3b4f63" opacity="0.7"/>
+  <rect x="160" y="200" width="640" height="16" fill="#4a5f73" opacity="0.55"/>
+  <rect x="40" y="260" width="120" height="70" rx="6" fill="#2f241c" opacity="0.85"/>
+  <rect x="800" y="250" width="120" height="80" rx="6" fill="#2f241c" opacity="0.85"/>
+  <rect x="300" y="120" width="360" height="120" rx="10" fill="#2a211c" opacity="0.75"/>
+  <rect x="320" y="140" width="320" height="80" rx="8" fill="#3a2a1f" opacity="0.8"/>
+  <path d="M120 320 C260 300, 700 300, 840 320" stroke="#6ca0b5" stroke-width="3" fill="none" opacity="0.35"/>
+</svg>

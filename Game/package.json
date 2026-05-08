@@ -1,0 +1,41 @@
+{
+  "name": "dnd-tavern-prototype",
+  "version": "0.1.0",
+  "description": "DND + Survivors tavern prototype",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "coop-server": "node server/coop-server.mjs",
+    "dist": "electron-builder --win portable",
+    "pack:win": "electron-packager . \"DND Tavern Prototype\" --platform=win32 --arch=x64 --out=dist --overwrite --prune=true"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.prototype.dndtavern",
+    "productName": "DND Tavern Prototype",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "styles.css",
+      "src/**/*",
+      "assets/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "signAndEditExecutable": false
+    }
+  }
+}

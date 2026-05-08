@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <defs>
+    <linearGradient id="armor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8f4632"/>
+      <stop offset="100%" stop-color="#5c2518"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="48" cy="56" rx="23" ry="19" fill="#402821"/>
+  <rect x="30" y="40" width="36" height="28" rx="10" fill="url(#armor)"/>
+  <circle cx="48" cy="30" r="11" fill="#d0ae8c"/>
+  <rect x="57" y="56" width="21" height="6" rx="3" transform="rotate(40 57 56)" fill="#3f3022"/>
+  <rect x="60" y="57" width="18" height="3" rx="1.5" transform="rotate(40 60 57)" fill="#a07d52"/>
+</svg>
