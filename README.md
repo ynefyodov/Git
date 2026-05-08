@@ -1,58 +1,58 @@
 # DND Tavern Prototype
 
-Прототип игры в стиле "таверна + выживание" на базе Electron + Web.
+Легковесный прототип top-down action game в стиле "таверна + выживание".
+Сейчас основной сценарий распространения - web-версия (single-player), доступная через GitHub Pages.
 
-## Структура
+## Суть проекта
 
-- `Game/` — исходный код проекта
-- `Game/server/` — lobby relay (WebSocket) для мультиплеера
-- `Game/assets/` — игровые ресурсы
+- 2D арена с волнами врагов, прокачкой черт и переходом между локациями.
+- Выбор класса героя перед стартом забега.
+- Быстрые игровые сессии для тестирования геймплея и баланса.
+- Web-прототип без кооператива (удобно делиться с друзьями по ссылке).
 
-## Играть в браузере
+## Как скачать и запустить игру
 
-- Публичная web-версия (GitHub Pages): `https://ynefyodov.github.io/Git/`
-- Деплой идёт автоматически через workflow `/.github/workflows/deploy-pages.yml` после push в `main`.
-- Текущая Pages-версия — single-player прототип (без кооператива).
+### Вариант 1: Запустить сразу в браузере (рекомендуется)
 
-## Быстрый старт
+- Открой ссылку: `https://ynefyodov.github.io/Git/`
+- Ничего устанавливать не нужно.
 
-1. Перейдите в папку проекта:
+### Вариант 2: Скачать архив с игрой
+
+1. Скачай файл `share/DND-Tavern-Web-Prototype.zip` из репозитория.
+2. Распакуй архив в любую папку.
+3. Открой файл `index.html` в браузере.
+
+## Запуск из исходников (для разработки)
+
+1. Клонируй репозиторий.
+2. Перейди в папку проекта:
 
 ```bash
 cd Game
 ```
 
-2. Установите зависимости:
+3. Установи зависимости:
 
 ```bash
 npm install
 ```
 
-3. Запустите приложение:
+4. Запусти desktop-версию (Electron):
 
 ```bash
 npm start
 ```
 
-## Дополнительно
+## Полезные пути в репозитории
 
-- Запуск локального relay (опционально, если вернём кооп позже):
+- `Game/` - код игры
+- `Game/src/` - основная игровая логика
+- `Game/assets/` - графика и игровые ресурсы
+- `share/DND-Tavern-Web-Prototype.zip` - архив для быстрого распространения
 
-```bash
-npm run coop-server
-```
+## Автоматизация GitHub
 
-## GitHub "агенты" (Actions automation)
-
-- `/.github/workflows/agent-ci-failure-issue.yml`
-  - условие: падает деплойный workflow;
-  - действие: создаёт/обновляет issue с метками `agent:todo` и `ci-failure`.
-- `/.github/workflows/agent-issue-autopick.yml`
-  - условие: issue имеет метку `agent:todo`;
-  - действие: переводит в `agent:in-progress` и оставляет служебный комментарий.
-
-- Сборка portable-версии:
-
-```bash
-npm run dist
-```
+- `/.github/workflows/deploy-pages.yml` - автопубликация web-версии на GitHub Pages
+- `/.github/workflows/agent-ci-failure-issue.yml` - авто-issue при падении деплоя
+- `/.github/workflows/agent-issue-autopick.yml` - автоподхват issue с меткой `agent:todo`
