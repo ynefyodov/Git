@@ -271,6 +271,33 @@ body {
   flex-wrap: wrap;
 }
 
+.key-hints {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 4px;
+  font-size: 13px;
+  color: #e8dcc4;
+}
+
+.key-hints span {
+  background: rgba(31, 24, 22, 0.7);
+  border: 1px solid #6f5b49;
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+
+kbd {
+  background: #231b1a;
+  border: 1px solid #8a7358;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: #f5e9d0;
+}
+
 button {
   border: 1px solid #ad8b54;
   color: #f5e9d0;

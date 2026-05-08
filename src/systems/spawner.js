@@ -1,12 +1,12 @@
-import { ARENA, ENEMY_TYPES, WAVES_LEVEL_1 } from "../config.js";
+import { ENEMY_TYPES, WAVES_LEVEL_1, WORLD } from "../config.js";
 import { Enemy } from "../entities/enemy.js";
 
 function randomSpawnPoint() {
   const side = Math.floor(Math.random() * 4);
-  if (side === 0) return { x: Math.random() * ARENA.width, y: -20 };
-  if (side === 1) return { x: ARENA.width + 20, y: Math.random() * ARENA.height };
-  if (side === 2) return { x: Math.random() * ARENA.width, y: ARENA.height + 20 };
-  return { x: -20, y: Math.random() * ARENA.height };
+  if (side === 0) return { x: Math.random() * WORLD.width, y: -20 };
+  if (side === 1) return { x: WORLD.width + 20, y: Math.random() * WORLD.height };
+  if (side === 2) return { x: Math.random() * WORLD.width, y: WORLD.height + 20 };
+  return { x: -20, y: Math.random() * WORLD.height };
 }
 
 export class WaveSpawner {

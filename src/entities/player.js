@@ -1,4 +1,4 @@
-import { ARENA, ATTACK_CONFIG, PLAYER_CONFIG } from "../config.js";
+import { ARENA, ATTACK_CONFIG, PLAYER_CONFIG, WORLD } from "../config.js";
 
 const MOVE_KEYS = new Set([
   "w",
@@ -59,7 +59,7 @@ export class Player {
     return input;
   }
 
-  update(deltaSeconds, input) {
+  update(deltaSeconds, input, bounds = WORLD) {
     let axisX = 0;
     let axisY = 0;
 
@@ -100,8 +100,9 @@ export class Player {
     this.x += (baseSpeedX + this.jumpDirectionX * jumpBoost) * deltaSeconds;
     this.y += (baseSpeedY + this.jumpDirectionY * jumpBoost) * deltaSeconds;
 
-    this.x = Math.max(ARENA.margin, Math.min(ARENA.width - ARENA.margin, this.x));
-    this.y = Math.max(ARENA.margin, Math.min(ARENA.height - ARENA.margin, this.y));
+    const margin = bounds?.margin ?? ARENA.margin;
+    this.x = Math.max(margin, Math.min((bounds?.width ?? ARENA.width) - margin, this.x));
+    this.y = Math.max(margin, Math.min((bounds?.height ?? ARENA.height) - margin, this.y));
 
     this.attackCooldownLeft = Math.max(0, this.attackCooldownLeft - deltaSeconds);
     this.swingTimeLeft = Math.max(0, this.swingTimeLeft - deltaSeconds);

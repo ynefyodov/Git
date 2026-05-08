@@ -10,6 +10,7 @@ import {
   SUBCLASS_BRANCHES,
   WAVES_LEVEL_1,
   WAVES_LEVEL_2,
+  WORLD,
   perkIdForRole,
   perksForClass,
 } from "./config.js";
@@ -107,6 +108,8 @@ const state = {
   pendingUpgrades: 0,
   choosingUpgrade: false,
   grantedCombatUpgrades: 0,
+  cameraX: 0,
+  cameraY: 0,
 };
 
 /** Увеличивается при каждом disconnectCoop — чтобы игнорировать отложенный onClose после смены комнаты. */
@@ -586,8 +589,8 @@ function startLevel1Combat() {
   state.enemies = [];
   state.projectiles = [];
   if (state.coopRole === "host" && state.coopGuestConnected) {
-    state.player = new Player(ARENA.width / 2 - 70, ARENA.height / 2, 0);
-    state.player2 = new Player(ARENA.width / 2 + 70, ARENA.height / 2, 1);
+    state.player = new Player(WORLD.width / 2 - 70, WORLD.height / 2, 0);
+    state.player2 = new Player(WORLD.width / 2 + 70, WORLD.height / 2, 1);
     state.player2.combatStyle = getCombatRole() === "ranged" ? "ranged" : "melee";
     state.player2.maxHp = build.maxHp;
     state.player2.hp = build.maxHp;
@@ -596,7 +599,7 @@ function startLevel1Combat() {
     state.player2.evasionChance = Math.min(0.6, build.evasion);
     state.guestInput = new Set();
   } else {
-    state.player = new Player(ARENA.width / 2, ARENA.height / 2, 0);
+    state.player = new Player(WORLD.width / 2, WORLD.height / 2, 0);
     state.player2 = null;
     state.guestInput = null;
   }
@@ -613,6 +616,8 @@ function startLevel1Combat() {
   state.skillDurationLeft = 0;
   state.skillActive = false;
   state.spawner = new WaveSpawner({ waves: WAVES_LEVEL_1, bossTypeId: "tavern_guard_boss" });
+  state.cameraX = Math.max(0, Math.min(WORLD.width - ARENA.width, state.player.x - ARENA.width / 2));
+  state.cameraY = Math.max(0, Math.min(WORLD.height - ARENA.height, state.player.y - ARENA.height / 2));
   state.pendingUpgrades = 0;
   state.choosingUpgrade = false;
   state.grantedCombatUpgrades = 0;
@@ -689,24 +694,42 @@ function renderArenaBackground(levelOverride) {
   const key = lv >= 2 ? "docks_bg" : "tavern_bg";
   const img = state.assets[key];
   if (img) {
-    ctx.drawImage(img, 0, 0, ARENA.width, ARENA.height);
+    ctx.drawImage(img, 0, 0, WORLD.width, WORLD.height);
     ctx.fillStyle = lv >= 2 ? "rgba(12, 18, 28, 0.22)" : "rgba(25, 16, 18, 0.18)";
-    ctx.fillRect(0, 0, ARENA.width, ARENA.height);
+    ctx.fillRect(0, 0, WORLD.width, WORLD.height);
     return;
   }
 
   ctx.fillStyle = lv >= 2 ? "#141c28" : "#241a1a";
-  ctx.fillRect(0, 0, ARENA.width, ARENA.height);
+  ctx.fillRect(0, 0, WORLD.width, WORLD.height);
 
   ctx.fillStyle = lv >= 2 ? "#1f2a38" : "#38272a";
-  for (let y = 0; y < ARENA.height; y += 30) {
-    ctx.fillRect(0, y, ARENA.width, 2);
+  for (let y = 0; y < WORLD.height; y += 30) {
+    ctx.fillRect(0, y, WORLD.width, 2);
   }
 
   ctx.fillStyle = "#4a3022";
   ctx.fillRect(18, 18, 150, 40);
-  ctx.fillRect(ARENA.width - 190, 18, 170, 35);
-  ctx.fillRect(ARENA.width - 210, ARENA.height - 52, 190, 32);
+  ctx.fillRect(WORLD.width - 190, 18, 170, 35);
+  ctx.fillRect(WORLD.width - 210, WORLD.height - 52, 190, 32);
+}
+
+function updateCamera() {
+  if (!state.player) return;
+  const deadZoneX = ARENA.width * 0.24;
+  const deadZoneY = ARENA.height * 0.24;
+  let targetX = state.cameraX;
+  let targetY = state.cameraY;
+  const px = state.player.x - state.cameraX;
+  const py = state.player.y - state.cameraY;
+  if (px < deadZoneX) targetX = state.player.x - deadZoneX;
+  else if (px > ARENA.width - deadZoneX) targetX = state.player.x - (ARENA.width - deadZoneX);
+  if (py < deadZoneY) targetY = state.player.y - deadZoneY;
+  else if (py > ARENA.height - deadZoneY) targetY = state.player.y - (ARENA.height - deadZoneY);
+  targetX = Math.max(0, Math.min(WORLD.width - ARENA.width, targetX));
+  targetY = Math.max(0, Math.min(WORLD.height - ARENA.height, targetY));
+  state.cameraX += (targetX - state.cameraX) * 0.18;
+  state.cameraY += (targetY - state.cameraY) * 0.18;
 }
 
 function updateProjectiles(deltaSeconds) {
@@ -759,9 +782,9 @@ function update(deltaSeconds) {
     pl.damageReduction = Math.min(0.75, build.armor + (state.skillActive && skill?.effect === "armorBurst" ? 0.25 : 0));
     pl.evasionChance = Math.min(0.6, build.evasion);
   }
-  state.player.update(deltaSeconds, state.input);
+  state.player.update(deltaSeconds, state.input, WORLD);
   if (state.player2 && state.guestInput) {
-    state.player2.update(deltaSeconds, state.guestInput);
+    state.player2.update(deltaSeconds, state.guestInput, WORLD);
   }
 
   if (state.heroClass === "priest") {
@@ -935,6 +958,8 @@ function drawProjectiles() {
 }
 
 function draw() {
+  ctx.save();
+  ctx.translate(-state.cameraX, -state.cameraY);
   renderArenaBackground();
 
   if (state.player) {
@@ -948,6 +973,7 @@ function draw() {
   }
 
   if (state.ended) {
+    ctx.restore();
     ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
     ctx.fillRect(0, 0, ARENA.width, ARENA.height);
     ctx.fillStyle = "#f6e6c9";
@@ -956,7 +982,9 @@ function draw() {
     ctx.fillText(state.result, ARENA.width / 2, ARENA.height / 2 - 10);
     ctx.font = "20px Segoe UI";
     ctx.fillText("Нажми Restart, чтобы начать заново", ARENA.width / 2, ARENA.height / 2 + 30);
+    return;
   }
+  ctx.restore();
 }
 
 function drawGuestFromSnapshot() {
@@ -1077,6 +1105,7 @@ function loop(ts) {
   state.fps = 1 / Math.max(deltaSeconds, 0.0001);
 
   update(deltaSeconds);
+  updateCamera();
   draw();
   if (state.coopRole === "host") {
     broadcastCoopIfHost();
