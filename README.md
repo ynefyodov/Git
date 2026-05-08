@@ -12,6 +12,7 @@
 
 - Публичная web-версия (GitHub Pages): `https://ynefyodov.github.io/Git/`
 - Деплой идёт автоматически через workflow `/.github/workflows/deploy-pages.yml` после push в `main`.
+- Текущая Pages-версия — single-player прототип (без кооператива).
 
 ## Быстрый старт
 
@@ -35,16 +36,20 @@ npm start
 
 ## Дополнительно
 
-- Запуск lobby relay (для мультиплеера):
+- Запуск локального relay (опционально, если вернём кооп позже):
 
 ```bash
 npm run coop-server
 ```
 
-- В браузере укажи URL relay в поле `WebSocket URL` (например `ws://127.0.0.1:8765`), затем:
-  - первый вошедший в комнату становится host;
-  - остальные входят в ту же комнату, нажимают `Готов`;
-  - host нажимает `Старт`.
+## GitHub "агенты" (Actions automation)
+
+- `/.github/workflows/agent-ci-failure-issue.yml`
+  - условие: падает деплойный workflow;
+  - действие: создаёт/обновляет issue с метками `agent:todo` и `ci-failure`.
+- `/.github/workflows/agent-issue-autopick.yml`
+  - условие: issue имеет метку `agent:todo`;
+  - действие: переводит в `agent:in-progress` и оставляет служебный комментарий.
 
 - Сборка portable-версии:
 

@@ -54,23 +54,9 @@
       </aside>
     </section>
 
-    <section id="coop-network" class="coop-network">
-      <h4>Онлайн-лобби (Web)</h4>
-      <p class="coop-hint">GitHub Pages только хостит клиент. Для мультиплеера нужен отдельный lobby relay (Node/WebSocket), например на VPS или локально с туннелем.</p>
-      <div class="coop-row">
-        <input id="coop-ws-url" type="text" spellcheck="false" value="ws://127.0.0.1:8765" aria-label="WebSocket URL" />
-        <input id="coop-room-id" type="text" spellcheck="false" value="public" aria-label="Room ID" />
-        <input id="coop-player-name" type="text" spellcheck="false" value="Player" aria-label="Player name" />
-        <button id="coop-join-btn" type="button" class="coop-btn">Войти в лобби</button>
-        <button id="coop-ready-btn" type="button" class="coop-btn" disabled>Готов</button>
-        <button id="coop-start-btn" type="button" class="coop-btn" disabled>Старт (хост)</button>
-      </div>
-      <p id="coop-status" class="coop-status" aria-live="polite"></p>
-      <div class="coop-host-share" aria-live="polite">
-        <p class="coop-share-label">Комната</p>
-        <div id="coop-room-players" class="coop-host-url-rows"></div>
-      </div>
-      <p class="coop-hint"><strong>Хост:</strong> первый в комнате, запускает матч. <strong>Остальные:</strong> ставят Ready и ждут старта. Управление в бою у гостя: стрелки + пробел.</p>
+    <section class="coop-network">
+      <h4>Web Prototype (single-player)</h4>
+      <p class="coop-hint">Эта версия на GitHub Pages работает как одиночный прототип без кооператива. Для тестов геймплея этого достаточно.</p>
     </section>
 
     <section class="controls">
