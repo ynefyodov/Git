@@ -10,6 +10,18 @@ body {
   color: #efe8db;
 }
 
+.runtime-warning {
+  width: min(1000px, 95vw);
+  margin: 12px auto 0;
+  border: 1px solid #b7833f;
+  background: rgba(62, 39, 12, 0.85);
+  color: #ffe8c6;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 .app {
   width: min(1000px, 95vw);
   margin: 16px auto;

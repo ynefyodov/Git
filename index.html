@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
+  <div id="runtime-warning" class="runtime-warning hidden" aria-live="polite"></div>
   <main class="app">
     <section class="hud">
       <div class="hud-row">
@@ -65,6 +66,17 @@
     </section>
   </main>
 
+  <script>
+    (function () {
+      if (location.protocol === "file:") {
+        const el = document.getElementById("runtime-warning");
+        if (el) {
+          el.textContent = "Игра открыта через file://. Запусти через GitHub Pages или локальный HTTP сервер, иначе выбор персонажа и модули могут не работать.";
+          el.classList.remove("hidden");
+        }
+      }
+    })();
+  </script>
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
