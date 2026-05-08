@@ -475,7 +475,9 @@ function getAttackStats() {
   if (getCombatRole() === "ranged") {
     const cooldown = cooldownBase * 1.12;
     const damage = ATTACK_CONFIG.rangedProjectileDamage * build.damageMul + powerBonus;
-    return { cooldown, damage, range: ATTACK_CONFIG.meleeRange * build.rangeMul };
+    const maxVisibleRange = ARENA.width * 0.46;
+    const range = Math.min(maxVisibleRange, ATTACK_CONFIG.rangedRange * build.rangeMul);
+    return { cooldown, damage, range };
   }
   const reachStacks = Math.min(
     stackForRole("reach"),
@@ -866,6 +868,45 @@ function update(deltaSeconds) {
       damage: h.damage,
       owner: h.owner,
     }));
+
+    if (state.heroClass === "mage") {
+      const chainJumps = build.baseChainTargets + (state.skillActive ? build.activeChainBonus : 0);
+      if (chainJumps > 0) {
+        const chainRadius = 150;
+        const falloff = 0.72;
+        for (const h of projHits) {
+          let source = h.enemy;
+          let chainDamage = h.damage * falloff;
+          const used = new Set([h.enemy]);
+          for (let jump = 0; jump < chainJumps; jump += 1) {
+            let next = null;
+            let bestD = Number.POSITIVE_INFINITY;
+            for (const e of state.enemies) {
+              if (e.dead || used.has(e)) continue;
+              const dx = e.x - source.x;
+              const dy = e.y - source.y;
+              const d = dx * dx + dy * dy;
+              if (d > chainRadius * chainRadius) continue;
+              if (d < bestD) {
+                bestD = d;
+                next = e;
+              }
+            }
+            if (!next) break;
+            next.applyDamage(chainDamage);
+            hitEvents.push({
+              enemy: next,
+              damage: chainDamage,
+              owner: h.owner,
+            });
+            used.add(next);
+            source = next;
+            chainDamage *= falloff;
+            if (chainDamage < 1) break;
+          }
+        }
+      }
+    }
   } else {
     for (const pl of playersAlive) {
       const meleeHits = pl.tryMeleeAttack(state.enemies, attackStats);

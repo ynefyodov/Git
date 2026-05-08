@@ -156,14 +156,17 @@ export class Player {
       return null;
     }
 
+    const range = attackStats.range ?? ATTACK_CONFIG.rangedRange;
     let nearest = null;
     let nearestDistance = Number.POSITIVE_INFINITY;
     for (const enemy of enemies) {
       const dx = enemy.x - this.x;
       const dy = enemy.y - this.y;
-      const distance = dx * dx + dy * dy;
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
+      const distance = Math.hypot(dx, dy);
+      if (distance > range + enemy.radius) continue;
+      const distanceSq = distance * distance;
+      if (distanceSq < nearestDistance) {
+        nearestDistance = distanceSq;
         nearest = enemy;
       }
     }
