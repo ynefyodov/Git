@@ -20,6 +20,7 @@ export const PLAYER_CONFIG = {
 export const ATTACK_CONFIG = {
   cooldown: 0.35,
   meleeRange: 54,
+  rangedRange: 430,
   meleeDamage: 24,
   swingDuration: 0.14,
   rangedProjectileSpeed: 560,
