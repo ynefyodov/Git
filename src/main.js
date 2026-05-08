@@ -740,12 +740,62 @@ function updateProjectiles(deltaSeconds) {
     p.ttl -= deltaSeconds;
     if (
       p.ttl <= 0
-      || p.x < -40 || p.x > ARENA.width + 40
-      || p.y < -40 || p.y > ARENA.height + 40
+      || p.x < -40 || p.x > WORLD.width + 40
+      || p.y < -40 || p.y > WORLD.height + 40
     ) {
       p.dead = true;
     }
   }
+}
+
+function drawInFieldHints() {
+  const skill = CLASS_ACTIVE_SKILLS[state.heroClass];
+  const boxX = 14;
+  const boxY = ARENA.height - 88;
+  const boxW = 270;
+  const boxH = 74;
+  ctx.save();
+  ctx.fillStyle = "rgba(12, 10, 16, 0.72)";
+  ctx.strokeStyle = "#6f5b49";
+  ctx.lineWidth = 1;
+  ctx.fillRect(boxX, boxY, boxW, boxH);
+  ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+  ctx.fillStyle = "#f3e7d4";
+  ctx.font = "12px Segoe UI";
+  ctx.textAlign = "left";
+  ctx.fillText("WASD / ↑↓←→  Движение", boxX + 10, boxY + 20);
+  ctx.fillText("Space  Прыжок", boxX + 10, boxY + 38);
+  ctx.fillText("E  Активный скилл", boxX + 10, boxY + 56);
+
+  const cX = boxX + boxW - 44;
+  const cY = boxY + 37;
+  const radius = 20;
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(180, 160, 130, 0.55)";
+  ctx.lineWidth = 5;
+  ctx.arc(cX, cY, radius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  const cdTotal = skill?.cooldown ?? 1;
+  const cdLeft = Math.max(0, state.skillCooldownLeft);
+  const ratio = cdTotal > 0 ? Math.min(1, cdLeft / cdTotal) : 0;
+  const start = -Math.PI / 2;
+  const end = start + Math.PI * 2 * (1 - ratio);
+  ctx.beginPath();
+  ctx.strokeStyle = state.skillActive ? "#9be16d" : "#e2c27a";
+  ctx.lineWidth = 5;
+  ctx.arc(cX, cY, radius, start, end);
+  ctx.stroke();
+
+  ctx.fillStyle = "#fff4df";
+  ctx.font = "bold 12px Segoe UI";
+  ctx.textAlign = "center";
+  const label = state.skillActive
+    ? "ON"
+    : `${Math.ceil(cdLeft)}`;
+  ctx.fillText(label, cX, cY + 4);
+  ctx.restore();
 }
 
 function update(deltaSeconds) {
@@ -972,8 +1022,10 @@ function draw() {
     }
   }
 
+  ctx.restore();
+  drawInFieldHints();
+
   if (state.ended) {
-    ctx.restore();
     ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
     ctx.fillRect(0, 0, ARENA.width, ARENA.height);
     ctx.fillStyle = "#f6e6c9";
@@ -984,7 +1036,6 @@ function draw() {
     ctx.fillText("Нажми Restart, чтобы начать заново", ARENA.width / 2, ARENA.height / 2 + 30);
     return;
   }
-  ctx.restore();
 }
 
 function drawGuestFromSnapshot() {
