@@ -88,8 +88,9 @@ export class Player {
     this.spaceWasDown = spaceDown;
 
     const magnitude = Math.hypot(axisX, axisY) || 1;
-    const baseSpeedX = (axisX / magnitude) * PLAYER_CONFIG.speed;
-    const baseSpeedY = (axisY / magnitude) * PLAYER_CONFIG.speed;
+    const speedMul = this.speedMultiplier ?? 1;
+    const baseSpeedX = (axisX / magnitude) * PLAYER_CONFIG.speed * speedMul;
+    const baseSpeedY = (axisY / magnitude) * PLAYER_CONFIG.speed * speedMul;
 
     this.jumpTimeLeft = Math.max(0, this.jumpTimeLeft - deltaSeconds);
     this.jumpCooldownLeft = Math.max(0, this.jumpCooldownLeft - deltaSeconds);

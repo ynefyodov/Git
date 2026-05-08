@@ -97,6 +97,114 @@ export const GAME_CONFIG = {
   runEndPaddingLevel2: 1.4,
 };
 
+export const RACE_DEFS = [
+  {
+    id: "human",
+    name: "Люди",
+    passive: "+1 стартовая черта и ускоренное получение XP",
+    modifiers: { bonusStartPerks: 1, xpGain: 1.2 },
+  },
+  {
+    id: "elf",
+    name: "Эльфы",
+    passive: "Уклонение и бонус к дальнему бою",
+    modifiers: { evasion: 0.12, rangedDamage: 1.12 },
+  },
+  {
+    id: "dwarf",
+    name: "Дварфы",
+    passive: "Повышенное HP и сопротивление урону",
+    modifiers: { hp: 1.18, armor: 0.18 },
+  },
+  {
+    id: "gnome",
+    name: "Гномы",
+    passive: "Высокая мобильность и уклонение",
+    modifiers: { moveSpeed: 1.12, evasion: 0.1 },
+  },
+  {
+    id: "orc",
+    name: "Орки",
+    passive: "Высокий урон и одно возрождение",
+    modifiers: { damage: 1.14, extraLives: 1 },
+  },
+  {
+    id: "goblin",
+    name: "Гоблины",
+    passive: "Уклонение и скорость атаки",
+    modifiers: { evasion: 0.08, attackSpeed: 1.14 },
+  },
+  {
+    id: "demon",
+    name: "Демоны",
+    passive: "Высокий урон при низком запасе жизней",
+    modifiers: { damage: 1.18, hp: 0.82, lifesteal: 0.08 },
+  },
+  {
+    id: "undead",
+    name: "Нежить",
+    passive: "Сильное уклонение и серия саморесов",
+    modifiers: { hp: 0.86, evasion: 0.18, extraLives: 2 },
+  },
+];
+
+export const CLASS_ACTIVE_SKILLS = {
+  warrior: { name: "Щит", cooldown: 18, duration: 6, effect: "armorBurst" },
+  barbarian: { name: "Ярость", cooldown: 16, duration: 6, effect: "damageBurst" },
+  rogue_melee: { name: "Ускользание", cooldown: 14, duration: 4.5, effect: "evasionBurst" },
+  rogue_ranged: { name: "Скорость ветра", cooldown: 15, duration: 5, effect: "attackBurst" },
+  mage: { name: "Цепь", cooldown: 20, duration: 7, effect: "chainBurst" },
+  priest: { name: "Благодать", cooldown: 18, duration: 8, effect: "graceAura" },
+};
+
+export const CLASS_BASE_STATS = {
+  warrior: { hp: 170, combatRole: "melee", armor: 0.15 },
+  barbarian: { hp: 150, combatRole: "melee", lowHpDamageBoost: 0.3 },
+  rogue_melee: { hp: 120, combatRole: "melee", doubleStrikeChance: 0.35 },
+  rogue_ranged: { hp: 120, combatRole: "ranged", farDamageBonus: 0.22 },
+  mage: { hp: 100, combatRole: "ranged", chainTargets: 2 },
+  priest: { hp: 100, combatRole: "ranged", selfRegen: 0.8 },
+};
+
+export const SUBCLASS_BRANCHES = {
+  warrior: [
+    { id: "knight", name: "Рыцарь", focus: "armor", perkIds: ["armor_mastery", "vital_guard"] },
+    { id: "spearman", name: "Копейщик", focus: "range", perkIds: ["reach_mastery", "chain_reach"] },
+    { id: "gladiator", name: "Гладиатор", focus: "damage", perkIds: ["damage_mastery", "execute_strike"] },
+    { id: "witcher", name: "Ведьмак", focus: "lifesteal", perkIds: ["lifesteal_mastery", "blood_oath"] },
+  ],
+  barbarian: [
+    { id: "berserker_path", name: "Путь берсерка", focus: "attackSpeed", perkIds: ["attack_speed_mastery", "battle_tempo"] },
+    { id: "control_path", name: "Путь контроля", focus: "range", perkIds: ["reach_mastery", "control_field"] },
+    { id: "war_path", name: "Путь войны", focus: "damage", perkIds: ["damage_mastery", "war_cry"] },
+    { id: "life_path", name: "Путь жизни", focus: "lifesteal", perkIds: ["lifesteal_mastery", "blood_anchor"] },
+  ],
+  rogue_melee: [
+    { id: "thief", name: "Вор", focus: "moveSpeed", perkIds: ["move_speed_mastery", "ghost_step"] },
+    { id: "pickpocket", name: "Карманник", focus: "range", perkIds: ["reach_mastery", "quick_lunge"] },
+    { id: "assassin", name: "Ассассин", focus: "damage", perkIds: ["damage_mastery", "critical_line"] },
+    { id: "vampire", name: "Вампир", focus: "lifesteal", perkIds: ["lifesteal_mastery", "blood_oath"] },
+  ],
+  rogue_ranged: [
+    { id: "hunter", name: "Охотник", focus: "attackSpeed", perkIds: ["attack_speed_mastery", "trigger_focus"] },
+    { id: "sniper", name: "Снайпер", focus: "range", perkIds: ["reach_mastery", "piercing_volley"] },
+    { id: "ranger_path", name: "Рейнджер", focus: "damage", perkIds: ["damage_mastery", "marked_prey"] },
+    { id: "killer", name: "Убийца", focus: "lifesteal", perkIds: ["lifesteal_mastery", "siphon_link"] },
+  ],
+  mage: [
+    { id: "fire_school", name: "Школа огня", focus: "damage", perkIds: ["damage_mastery", "fire_brand"] },
+    { id: "ice_school", name: "Школа льда", focus: "range", perkIds: ["reach_mastery", "frost_shell"] },
+    { id: "storm_school", name: "Школа молний", focus: "attackSpeed", perkIds: ["attack_speed_mastery", "storm_pulse"] },
+    { id: "earth_school", name: "Школа земли", focus: "armor", perkIds: ["armor_mastery", "stone_skin"] },
+  ],
+  priest: [
+    { id: "templar", name: "Храмовник", focus: "armor", perkIds: ["armor_mastery", "vital_guard"] },
+    { id: "bard", name: "Бард", focus: "moveSpeed", perkIds: ["move_speed_mastery", "grace_step"] },
+    { id: "monk", name: "Монах", focus: "damage", perkIds: ["damage_mastery", "spirit_strike"] },
+    { id: "shaman", name: "Шаман", focus: "attackSpeed", perkIds: ["attack_speed_mastery", "totem_rhythm"] },
+  ],
+};
+
 /** Maps combat role → perk id for each hero class (shared combat code uses roles). */
 export const PERK_CLASS_MAP = {
   melee: {
@@ -123,67 +231,169 @@ export const PROGRESSION_CONFIG = {
    * Каждая планка даёт +1 черту, максимум до босса локации.
    */
   experiencePerUpgrade: 18,
-  upgradesBeforeBoss: 3,
+  upgradesBeforeBoss: 4,
   perks: [
     {
-      id: "sweeping_cleave",
-      classes: ["fighter", "barbarian"],
-      name: "Великий размах",
-      description: "Как «Великое оружие»: удар цепляет соседние цели",
+      id: "armor_mastery",
+      classes: ["warrior", "barbarian", "rogue_melee", "rogue_ranged", "mage", "priest"],
+      name: "Оплот",
+      description: "Повышает броню и снижает входящий урон",
     },
     {
-      id: "blood_anchor",
-      classes: ["fighter", "barbarian"],
-      name: "Высасывание жизни",
-      description: "Часть урона ближних ударов превращается в восстановленные хит‑поинты",
+      id: "reach_mastery",
+      classes: ["warrior", "barbarian", "rogue_melee", "rogue_ranged", "mage", "priest"],
+      name: "Длинная рука",
+      description: "Увеличивает дальность и досягаемость атаки",
     },
     {
-      id: "battle_tempo",
-      classes: ["fighter", "barbarian"],
-      name: "Многоатака",
-      description: "Сокращает время между ударами — классический темп бойца",
+      id: "damage_mastery",
+      classes: ["warrior", "barbarian", "rogue_melee", "rogue_ranged", "mage", "priest"],
+      name: "Казнь",
+      description: "Усиливает прямой урон от атак",
     },
     {
-      id: "skullbreaker",
-      classes: ["fighter", "barbarian"],
-      name: "Свирепые удары",
-      description: "Каждый удар ближнего боя бьёт сильнее",
+      id: "lifesteal_mastery",
+      classes: ["warrior", "barbarian", "rogue_melee", "rogue_ranged", "mage", "priest"],
+      name: "Кровавая печать",
+      description: "Часть нанесённого урона лечит персонажа",
     },
     {
-      id: "extended_blade",
-      classes: ["fighter", "barbarian"],
-      name: "Стойка с длинным клинком",
-      description: "Увеличивает досягаемость ближней атаки",
+      id: "attack_speed_mastery",
+      classes: ["warrior", "barbarian", "rogue_melee", "rogue_ranged", "mage", "priest"],
+      name: "Темп боя",
+      description: "Повышает скорость атаки",
     },
     {
-      id: "shrapnel_burst",
-      classes: ["ranger", "warlock"],
-      name: "Залп по площади",
-      description: "Снаряд ранит цель и ближайших врагов (колючий луч / осколочный выстрел)",
+      id: "move_speed_mastery",
+      classes: ["warrior", "barbarian", "rogue_melee", "rogue_ranged", "mage", "priest"],
+      name: "Лёгкий шаг",
+      description: "Повышает скорость передвижения",
     },
     {
-      id: "siphon_link",
-      classes: ["ranger", "warlock"],
-      name: "Поглощение жизни",
-      description: "Часть урона дальнобойных попаданий идёт на восстановление HP",
+      id: "vital_guard",
+      classes: ["warrior", "priest"],
+      name: "Живой бастион",
+      description: "Повышает максимум HP и регенерацию",
     },
     {
-      id: "trigger_focus",
-      classes: ["ranger", "warlock"],
-      name: "Быстрые руки",
-      description: "Сокращает задержку между выстрелами",
-    },
-    {
-      id: "marked_prey",
-      classes: ["ranger", "warlock"],
-      name: "Охотничий знак / Агония",
-      description: "Усиливает урон каждого попадания снарядом",
+      id: "blood_oath",
+      classes: ["warrior", "barbarian", "rogue_melee", "rogue_ranged"],
+      name: "Кровавая клятва",
+      description: "Усиленный вампиризм и урон на низком HP",
     },
     {
       id: "piercing_volley",
-      classes: ["ranger", "warlock"],
-      name: "Пробивающий выстрел",
-      description: "Снаряд может поразить ещё одну цель по траектории",
+      classes: ["rogue_ranged", "mage"],
+      name: "Пробивающий залп",
+      description: "Снаряды пробивают дополнительные цели",
+    },
+    {
+      id: "trigger_focus",
+      classes: ["rogue_ranged", "barbarian", "shaman", "mage", "priest"],
+      name: "Фокус темпа",
+      description: "Сокращает кулдауны атак и умений",
+    },
+    {
+      id: "marked_prey",
+      classes: ["rogue_ranged", "mage"],
+      name: "Метка добычи",
+      description: "Бонус к урону по ближайшим целям",
+    },
+    {
+      id: "siphon_link",
+      classes: ["rogue_ranged", "mage", "priest"],
+      name: "Связь жнеца",
+      description: "Рanged-урон частично конвертируется в лечение",
+    },
+    {
+      id: "battle_tempo",
+      classes: ["barbarian", "rogue_melee"],
+      name: "Боевое ускорение",
+      description: "Дает стаки скорости атаки за серию ударов",
+    },
+    {
+      id: "war_cry",
+      classes: ["barbarian"],
+      name: "Боевой клич",
+      description: "Краткий буст урона и защиты в ближнем бою",
+    },
+    {
+      id: "ghost_step",
+      classes: ["rogue_melee", "bard"],
+      name: "Теневой шаг",
+      description: "Добавляет уклонение и скорость перемещения",
+    },
+    {
+      id: "critical_line",
+      classes: ["rogue_melee"],
+      name: "Линия убийцы",
+      description: "Сильно повышает критический урон",
+    },
+    {
+      id: "stone_skin",
+      classes: ["mage", "priest", "warrior"],
+      name: "Каменная кожа",
+      description: "Увеличивает броню и устойчивость к контактному урону",
+    },
+    {
+      id: "storm_pulse",
+      classes: ["mage"],
+      name: "Импульс бури",
+      description: "Ускоряет атаки и слегка отталкивает врагов",
+    },
+    {
+      id: "frost_shell",
+      classes: ["mage", "priest"],
+      name: "Морозный панцирь",
+      description: "Снижает входящий урон и повышает выживаемость",
+    },
+    {
+      id: "fire_brand",
+      classes: ["mage"],
+      name: "Огненная метка",
+      description: "Добавляет периодический урон по поражённым врагам",
+    },
+    {
+      id: "grace_step",
+      classes: ["priest", "bard"],
+      name: "Шаг благодати",
+      description: "Повышает скорость и эффективность лечения",
+    },
+    {
+      id: "spirit_strike",
+      classes: ["priest", "monk"],
+      name: "Удар духа",
+      description: "Усиливает урон от базовых атак",
+    },
+    {
+      id: "control_field",
+      classes: ["barbarian", "mage", "priest"],
+      name: "Поле контроля",
+      description: "Улучшает контроль толпы и замедление врагов",
+    },
+    {
+      id: "execute_strike",
+      classes: ["warrior", "rogue_melee"],
+      name: "Казнящий удар",
+      description: "Финишный бонус к урону по целям с низким HP",
+    },
+    {
+      id: "chain_reach",
+      classes: ["warrior", "mage"],
+      name: "Цепная досягаемость",
+      description: "Бонус к дальности и количеству задетых целей",
+    },
+    {
+      id: "quick_lunge",
+      classes: ["rogue_melee"],
+      name: "Быстрый выпад",
+      description: "Повышает мобильность и шанс проскока через врагов",
+    },
+    {
+      id: "totem_rhythm",
+      classes: ["priest"],
+      name: "Ритм тотема",
+      description: "Повышает скорость атаки и небольшое лечение в секунду",
     },
   ],
   splashRadius: 44,
@@ -197,6 +407,10 @@ export const PROGRESSION_CONFIG = {
   reachBonusPerStack: 5,
   maxReachStacks: 6,
   maxPierceStacks: 4,
+  maxArmorStacks: 8,
+  maxMoveSpeedStacks: 8,
+  maxDamageStacks: 8,
+  maxLifestealStacks: 8,
 };
 
 export function perksForClass(classId) {
