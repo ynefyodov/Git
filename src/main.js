@@ -2,6 +2,7 @@ import {
   ARENA,
   ATTACK_CONFIG,
   CLASS_ACTIVE_SKILLS,
+  ADVENTURE_LOCATIONS,
   CLASS_BASE_STATS,
   ENEMY_TYPES,
   GAME_CONFIG,
@@ -23,7 +24,7 @@ import {
   circlesWithinRadius,
 } from "./systems/collision.js";
 import { renderHud } from "./ui/hud.js";
-import { pickRandomStory } from "./lore/stories.js";
+import { pickRandomStory, travelNarrative } from "./lore/stories.js";
 import { HERO_CLASSES, combatRoleForClass, getHeroClass } from "./dnd/classes.js";
 import { connectCoop, attachGuestKeyCapture } from "./net/coop.js";
 import { Enemy } from "./entities/enemy.js";
@@ -46,6 +47,13 @@ const upgradePanel = document.getElementById("upgrade-panel");
 const upgradeTitleEl = document.getElementById("upgrade-title");
 const upgradeDescEl = document.getElementById("upgrade-desc");
 const upgradeOptionsEl = document.getElementById("upgrade-options");
+const adventureMapPanel = document.getElementById("adventure-map-panel");
+const adventureMapDesc = document.getElementById("adventure-map-desc");
+const adventureMapNodes = document.getElementById("adventure-map-nodes");
+const pathLeftBtn = document.getElementById("path-left-btn");
+const pathForwardBtn = document.getElementById("path-forward-btn");
+const pathRightBtn = document.getElementById("path-right-btn");
+const pathRestBtn = document.getElementById("path-rest-btn");
 const coopWsUrlInput = document.getElementById("coop-ws-url");
 const coopRoomIdInput = document.getElementById("coop-room-id");
 const coopPlayerNameInput = document.getElementById("coop-player-name");
@@ -110,6 +118,13 @@ const state = {
   grantedCombatUpgrades: 0,
   cameraX: 0,
   cameraY: 0,
+  adventureDepth: 0,
+  adventureNodeType: "forest",
+  adventureAwaitingChoice: false,
+  restBuffTimeLeft: 0,
+  restNoXp: false,
+  trapTimer: 0,
+  traps: [],
 };
 
 /** Увеличивается при каждом disconnectCoop — чтобы игнорировать отложенный onClose после смены комнаты. */
@@ -209,6 +224,106 @@ function getBuildStats() {
     baseChainTargets: classStats.chainTargets ?? 0,
     activeChainBonus: state.skillActive && CLASS_ACTIVE_SKILLS[state.heroClass]?.effect === "chainBurst" ? 2 : 0,
   };
+}
+
+function locationDef() {
+  return ADVENTURE_LOCATIONS[state.adventureNodeType] ?? ADVENTURE_LOCATIONS.forest;
+}
+
+function mapChoiceToNode(choice) {
+  if (choice === "left") return "forest";
+  if (choice === "right") return "river";
+  return "unknown";
+}
+
+function depthScale() {
+  return 1 + state.adventureDepth * 0.18;
+}
+
+function buildWavesForLocation(loc, depth) {
+  const baseStart = 0;
+  const scale = 1 + depth * 0.15;
+  const pool = loc.basePool;
+  return [
+    { id: 1, start: baseStart + 0, end: baseStart + 26, spawnEvery: 1.2 / scale, spawnCount: 1, pool },
+    { id: 2, start: baseStart + 26, end: baseStart + 52, spawnEvery: 0.95 / scale, spawnCount: 2, pool },
+    { id: 3, start: baseStart + 52, end: baseStart + 76, spawnEvery: 0.75 / scale, spawnCount: 2, pool },
+    { id: 4, start: baseStart + 76, end: baseStart + 90, spawnEvery: 0.58 / scale, spawnCount: 3, pool },
+    { id: 5, start: baseStart + 90, end: baseStart + 94, spawnEvery: 2.5, spawnCount: 1, pool: [] },
+  ];
+}
+
+function showAdventureMap(reasonText = "") {
+  state.started = false;
+  state.adventureAwaitingChoice = true;
+  state.runPhase = "adventureMap";
+  upgradePanel.classList.add("hidden");
+  intermissionPanel.classList.add("hidden");
+  introPanel.classList.add("hidden");
+  adventureMapPanel?.classList.remove("hidden");
+  if (adventureMapDesc) {
+    const depthInfo = `Перекресток #${state.adventureDepth + 1}.`;
+    const dynamicText = travelNarrative(state.adventureNodeType, state.restNoXp);
+    const restText = reasonText || `${dynamicText} Выбери маршрут: лево / право / прямо, либо отдых.`;
+    adventureMapDesc.textContent = `${depthInfo} ${restText}`;
+  }
+  renderAdventureNodes();
+}
+
+function renderAdventureNodes() {
+  if (!adventureMapNodes) return;
+  adventureMapNodes.innerHTML = "";
+  const defs = [
+    { left: "8%", top: "66%", cls: "battle", text: "🌲" },
+    { left: "30%", top: "46%", cls: "unknown", text: "?" },
+    { left: "54%", top: "58%", cls: "battle", text: "🌊" },
+    { left: "78%", top: "38%", cls: "rest", text: "⛺" },
+    { left: "90%", top: "56%", cls: "unknown", text: "?" },
+  ];
+  for (const d of defs) {
+    const node = document.createElement("div");
+    node.className = `adventure-map-node ${d.cls}`;
+    node.style.left = d.left;
+    node.style.top = d.top;
+    node.textContent = d.text;
+    adventureMapNodes.appendChild(node);
+  }
+}
+
+function startLocationRun(nodeType, fromRest = false) {
+  state.adventureNodeType = nodeType;
+  state.adventureAwaitingChoice = false;
+  adventureMapPanel?.classList.add("hidden");
+  const loc = locationDef();
+  const travelText = travelNarrative(nodeType, fromRest);
+  if (adventureMapDesc) {
+    adventureMapDesc.textContent = travelText;
+  }
+  const waves = buildWavesForLocation(loc, state.adventureDepth);
+  state.runPhase = "fighting";
+  state.level = state.adventureDepth + 1;
+  state.started = true;
+  state.ended = false;
+  state.result = `Бой: ${loc.name}`;
+  state.elapsedSeconds = 0;
+  state.kills = 0;
+  state.enemies = [];
+  state.projectiles = [];
+  state.traps = [];
+  state.trapTimer = 1.5;
+  state.restNoXp = fromRest;
+  state.restBuffTimeLeft = fromRest ? 25 : Math.max(0, state.restBuffTimeLeft);
+  const scale = depthScale();
+  state.spawner.configure({
+    waves,
+    bossTypeId: loc.bossTypeId,
+    enemyScale: scale,
+    overridePool: loc.basePool,
+  });
+  if (intermissionTextEl && loc.description) {
+    intermissionTextEl.textContent = loc.description;
+  }
+  restartBtn.disabled = true;
 }
 
 function buildClassButtons() {
@@ -394,8 +509,16 @@ function showClassPanel() {
   state.skillActive = false;
   state.skillRequested = false;
   state.remainingLives = 0;
+  state.adventureDepth = 0;
+  state.adventureNodeType = "forest";
+  state.adventureAwaitingChoice = false;
+  state.restBuffTimeLeft = 0;
+  state.restNoXp = false;
+  state.trapTimer = 0;
+  state.traps = [];
   if (introClassBlurb) introClassBlurb.textContent = "";
   classPanel.classList.remove("hidden");
+  adventureMapPanel?.classList.add("hidden");
   introPanel.classList.add("hidden");
   intermissionPanel.classList.add("hidden");
   upgradePanel.classList.add("hidden");
@@ -617,7 +740,14 @@ function startLevel1Combat() {
   state.skillCooldownLeft = classSkill?.cooldown ?? 0;
   state.skillDurationLeft = 0;
   state.skillActive = false;
-  state.spawner = new WaveSpawner({ waves: WAVES_LEVEL_1, bossTypeId: "tavern_guard_boss" });
+  const loc = locationDef();
+  const waves = buildWavesForLocation(loc, state.adventureDepth);
+  state.spawner = new WaveSpawner({
+    waves,
+    bossTypeId: loc.bossTypeId,
+    enemyScale: depthScale(),
+    overridePool: loc.basePool,
+  });
   state.cameraX = Math.max(0, Math.min(WORLD.width - ARENA.width, state.player.x - ARENA.width / 2));
   state.cameraY = Math.max(0, Math.min(WORLD.height - ARENA.height, state.player.y - ARENA.height / 2));
   state.pendingUpgrades = 0;
@@ -813,6 +943,7 @@ function update(deltaSeconds) {
   }
 
   state.elapsedSeconds += deltaSeconds;
+  state.restBuffTimeLeft = Math.max(0, state.restBuffTimeLeft - deltaSeconds);
   const skill = CLASS_ACTIVE_SKILLS[state.heroClass];
   if (skill) {
     state.skillCooldownLeft = Math.max(0, state.skillCooldownLeft - deltaSeconds);
@@ -831,6 +962,9 @@ function update(deltaSeconds) {
   const playersAlive = activePlayers();
   for (const pl of playersAlive) {
     pl.speedMultiplier = build.moveSpeedMul;
+    if (state.restBuffTimeLeft > 0) {
+      pl.speedMultiplier *= 1.08;
+    }
     pl.damageReduction = Math.min(0.75, build.armor + (state.skillActive && skill?.effect === "armorBurst" ? 0.25 : 0));
     pl.evasionChance = Math.min(0.6, build.evasion);
   }
@@ -845,6 +979,38 @@ function update(deltaSeconds) {
     }
   }
   state.spawner.update(deltaSeconds, state.elapsedSeconds, state.enemies);
+
+  const loc = locationDef();
+  if (loc.objective === "path" && loc.trapIntensity > 0) {
+    state.trapTimer -= deltaSeconds;
+    if (state.trapTimer <= 0) {
+      state.trapTimer = Math.max(1.2, 3.2 - state.adventureDepth * 0.2);
+      state.traps.push({
+        x: Math.random() * (WORLD.width - 80) + 40,
+        y: Math.random() * (WORLD.height - 80) + 40,
+        r: 44,
+        telegraph: 1.0,
+        active: 0.8,
+      });
+    }
+  }
+  for (const trap of state.traps) {
+    trap.telegraph -= deltaSeconds;
+    if (trap.telegraph <= 0) {
+      trap.active -= deltaSeconds;
+      if (trap.active > 0) {
+        for (const pl of playersAlive) {
+          if (circlesWithinRadius(pl.x, pl.y, trap.x, trap.y, trap.r)) {
+            const evade = (pl.evasionChance ?? 0) + 0.1;
+            if (Math.random() > evade) {
+              pl.hp -= 8 + state.adventureDepth * 2;
+            }
+          }
+        }
+      }
+    }
+  }
+  state.traps = state.traps.filter((t) => t.active > 0 || t.telegraph > 0);
 
   const attackStats = getAttackStats();
   let hitEvents = [];
@@ -972,7 +1138,7 @@ function update(deltaSeconds) {
     const enemyDef = ENEMY_TYPES[enemy.typeId];
     return sum + (enemyDef?.score ?? 1);
   }, 0);
-  const xpThisFrame = Math.round(xpThisFrameBase * build.xpMul);
+  const xpThisFrame = state.restNoXp ? 0 : Math.round(xpThisFrameBase * build.xpMul);
   state.score += killsThisFrame;
   state.kills += killsThisFrame;
   state.experience += xpThisFrame;
@@ -1010,25 +1176,28 @@ function update(deltaSeconds) {
     }
   }
 
-  const waves = state.level === 1 ? WAVES_LEVEL_1 : WAVES_LEVEL_2;
+  const waves = state.spawner?.waves ?? WAVES_LEVEL_1;
   const finalWave = waves[waves.length - 1];
-  const padding = state.level === 1 ? GAME_CONFIG.runEndPadding : GAME_CONFIG.runEndPaddingLevel2;
+  const padding = GAME_CONFIG.runEndPaddingLevel2;
   const outOfWaveTime = state.elapsedSeconds > finalWave.end + padding;
   const bossWasScheduled = state.spawner.isBossScheduled(state.elapsedSeconds);
   const bossAlive = state.spawner.hasBossAlive(state.enemies);
 
-  if (!state.ended && state.level === 1 && bossWasScheduled && !bossAlive && outOfWaveTime && !state.intermissionShown) {
-    showIntermissionLevel2();
-    return;
-  }
-
-  if (!state.ended && state.level === 2 && bossWasScheduled && !bossAlive && outOfWaveTime) {
+  if (!state.ended && bossWasScheduled && !bossAlive && outOfWaveTime) {
     state.ended = true;
-    state.result = "Победа";
+    state.result = `Победа: ${locationDef().name}`;
   }
 
   if (state.ended) {
     restartBtn.disabled = false;
+    if (!state.intermissionShown) {
+      state.intermissionShown = true;
+      state.adventureDepth += 1;
+      const travelText = state.restNoXp
+        ? "Вы шли спокойно и без спешки, телега довезла вас до следующего перекрестка."
+        : "Пыль осела после боя. Впереди новый перекресток и новое решение.";
+      showAdventureMap(travelText);
+    }
   }
 }
 
@@ -1056,6 +1225,20 @@ function draw() {
   if (state.player) {
     for (const enemy of state.enemies) {
       enemy.draw(ctx, state.assets);
+    }
+    for (const trap of state.traps) {
+      ctx.beginPath();
+      ctx.arc(trap.x, trap.y, trap.r, 0, Math.PI * 2);
+      if (trap.telegraph > 0) {
+        ctx.fillStyle = "rgba(236, 196, 88, 0.18)";
+        ctx.strokeStyle = "rgba(236, 196, 88, 0.7)";
+      } else {
+        ctx.fillStyle = "rgba(218, 66, 66, 0.24)";
+        ctx.strokeStyle = "rgba(255, 110, 110, 0.85)";
+      }
+      ctx.lineWidth = 2;
+      ctx.fill();
+      ctx.stroke();
     }
     drawProjectiles();
     for (const pl of activePlayers()) {
@@ -1221,9 +1404,9 @@ function loop(ts) {
     xpToNext: xpProgress.xpToNext,
     elapsed: state.elapsedSeconds,
     fps: state.fps,
-    status: state.skillActive
+    status: `${locationDef().name} · Угроза ${state.adventureDepth + 1} · ` + (state.skillActive
       ? `${state.result} · ${CLASS_ACTIVE_SKILLS[state.heroClass]?.name ?? "Скилл"} активен`
-      : `${state.result} · ${CLASS_ACTIVE_SKILLS[state.heroClass]?.name ?? "Скилл"} CD ${Math.ceil(state.skillCooldownLeft)}s`,
+      : `${state.result} · ${CLASS_ACTIVE_SKILLS[state.heroClass]?.name ?? "Скилл"} CD ${Math.ceil(state.skillCooldownLeft)}s`),
     perks: getPerkListText(),
     lastUpgrade: state.lastUpgrade || `Жизни: ${state.remainingLives}`,
   });
@@ -1238,6 +1421,30 @@ battleBtn.addEventListener("click", () => {
 continueBtn.addEventListener("click", () => {
   onContinueFromIntermission();
 });
+
+function chooseAdventurePath(choice) {
+  if (!state.adventureAwaitingChoice) return;
+  if (choice === "rest") {
+    const players = activePlayers();
+    for (const pl of players) {
+      pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * 0.5);
+    }
+    state.restBuffTimeLeft = 35;
+    state.restNoXp = true;
+    state.adventureDepth += 1;
+    showAdventureMap("Вы отдохнули на безопасной дороге. Повозка довезла вас до следующего перекрестка.");
+    return;
+  }
+  const node = mapChoiceToNode(choice);
+  const noXpThisRun = state.restNoXp;
+  state.restNoXp = false;
+  startLocationRun(node, noXpThisRun);
+}
+
+pathLeftBtn?.addEventListener("click", () => chooseAdventurePath("left"));
+pathForwardBtn?.addEventListener("click", () => chooseAdventurePath("forward"));
+pathRightBtn?.addEventListener("click", () => chooseAdventurePath("right"));
+pathRestBtn?.addEventListener("click", () => chooseAdventurePath("rest"));
 
 restartBtn.addEventListener("click", () => {
   state.ended = false;

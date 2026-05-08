@@ -99,6 +99,8 @@ export class Enemy {
       this.drawThug(ctx);
     } else if (this.typeId === "cultist") {
       this.drawCultist(ctx);
+    } else if (this.typeId === "murloc") {
+      this.drawMurloc(ctx);
     } else if (this.isBoss) {
       this.drawBossGuard(ctx);
     } else {
@@ -182,6 +184,25 @@ export class Enemy {
     ctx.beginPath();
     ctx.moveTo(this.x + r * 0.45, this.y);
     ctx.lineTo(this.x + r * 1.05, this.y - r * 0.8);
+    ctx.stroke();
+  }
+
+  drawMurloc(ctx) {
+    const r = this.radius;
+    ctx.fillStyle = "#2f8f9d";
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#a8f0ef";
+    ctx.beginPath();
+    ctx.arc(this.x - r * 0.25, this.y - r * 0.15, r * 0.15, 0, Math.PI * 2);
+    ctx.arc(this.x + r * 0.25, this.y - r * 0.15, r * 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#1f4f56";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(this.x - r * 0.45, this.y + r * 0.2);
+    ctx.lineTo(this.x + r * 0.45, this.y + r * 0.2);
     ctx.stroke();
   }
 

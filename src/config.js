@@ -54,6 +54,14 @@ export const ENEMY_TYPES = {
     color: "#6a4fc3",
     score: 2,
   },
+  murloc: {
+    maxHp: 36,
+    speed: 138,
+    radius: 12,
+    damage: 11,
+    color: "#4fc3c6",
+    score: 2,
+  },
   tavern_guard_boss: {
     maxHp: 680,
     speed: 84,
@@ -102,6 +110,36 @@ export const GAME_CONFIG = {
   contactTickSeconds: 0.5,
   runEndPadding: 1.2,
   runEndPaddingLevel2: 1.4,
+};
+
+export const ADVENTURE_LOCATIONS = {
+  forest: {
+    name: "Лес",
+    icon: "🌲",
+    description: "Редкие, но опасные враги. На тропах ловушки и капканы.",
+    basePool: ["cultist", "thug"],
+    bossTypeId: "tavern_guard_boss",
+    trapIntensity: 1,
+    objective: "path",
+  },
+  river: {
+    name: "Река",
+    icon: "🌊",
+    description: "Множество мурлоков и плотные волны на переправах.",
+    basePool: ["murloc", "murloc", "rat"],
+    bossTypeId: "dock_warden_boss",
+    trapIntensity: 0,
+    objective: "survive",
+  },
+  unknown: {
+    name: "Неизвестно",
+    icon: "?",
+    description: "Непредсказуемый участок пути с мутирующими условиями боя.",
+    basePool: ["rat", "thug", "cultist", "murloc"],
+    bossTypeId: "tavern_guard_boss",
+    trapIntensity: 0.4,
+    objective: "survive",
+  },
 };
 
 export const RACE_DEFS = [

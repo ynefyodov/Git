@@ -13,6 +13,8 @@ export class WaveSpawner {
   constructor(options = {}) {
     this.waves = options.waves ?? WAVES_LEVEL_1;
     this.bossTypeId = options.bossTypeId ?? "tavern_guard_boss";
+    this.enemyScale = options.enemyScale ?? 1;
+    this.overridePool = options.overridePool ?? null;
     this.spawnTimer = 0;
     this.bossSpawned = false;
     this.currentWaveId = "-";
@@ -21,6 +23,8 @@ export class WaveSpawner {
   configure(options) {
     this.waves = options.waves ?? this.waves;
     this.bossTypeId = options.bossTypeId ?? this.bossTypeId;
+    this.enemyScale = options.enemyScale ?? this.enemyScale;
+    this.overridePool = options.overridePool ?? this.overridePool;
     this.spawnTimer = 0;
     this.bossSpawned = false;
     this.currentWaveId = "-";
@@ -36,7 +40,11 @@ export class WaveSpawner {
     if (activeWave.pool.length === 0) {
       if (!this.bossSpawned) {
         const spawn = randomSpawnPoint();
-        enemies.push(new Enemy(this.bossTypeId, spawn.x, spawn.y));
+        const boss = new Enemy(this.bossTypeId, spawn.x, spawn.y);
+        boss.maxHp = Math.round(boss.maxHp * this.enemyScale);
+        boss.hp = boss.maxHp;
+        boss.damage = Math.round(boss.damage * (0.9 + this.enemyScale * 0.2));
+        enemies.push(boss);
         this.bossSpawned = true;
       }
       return;
@@ -48,11 +56,16 @@ export class WaveSpawner {
     }
 
     this.spawnTimer = activeWave.spawnEvery;
-    const spawnCount = activeWave.spawnCount ?? 1;
+    const spawnCount = Math.max(1, Math.round((activeWave.spawnCount ?? 1) * Math.min(2.8, this.enemyScale)));
+    const pool = this.overridePool?.length ? this.overridePool : activeWave.pool;
     for (let i = 0; i < spawnCount; i += 1) {
-      const enemyType = activeWave.pool[Math.floor(Math.random() * activeWave.pool.length)];
+      const enemyType = pool[Math.floor(Math.random() * pool.length)];
       const spawn = randomSpawnPoint();
-      enemies.push(new Enemy(enemyType, spawn.x, spawn.y));
+      const enemy = new Enemy(enemyType, spawn.x, spawn.y);
+      enemy.maxHp = Math.round(enemy.maxHp * this.enemyScale);
+      enemy.hp = enemy.maxHp;
+      enemy.damage = Math.round(enemy.damage * (0.95 + this.enemyScale * 0.12));
+      enemies.push(enemy);
     }
   }
 
