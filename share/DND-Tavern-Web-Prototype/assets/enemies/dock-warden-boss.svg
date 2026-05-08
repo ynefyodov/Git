@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="wardenArmor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c7d6e6"/>
+      <stop offset="100%" stop-color="#6f7f92"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="64" cy="76" rx="34" ry="26" fill="#2f3a46"/>
+  <rect x="38" y="46" width="52" height="44" rx="12" fill="url(#wardenArmor)"/>
+  <circle cx="64" cy="36" r="15" fill="#e6d7c4"/>
+  <rect x="84" y="54" width="30" height="8" rx="4" transform="rotate(38 84 54)" fill="#2b3b4d"/>
+  <rect x="90" y="56" width="24" height="5" rx="2.5" transform="rotate(38 90 56)" fill="#8fa7bd"/>
+  <rect x="46" y="48" width="36" height="8" rx="3" fill="#d7e4f2"/>
+</svg>
