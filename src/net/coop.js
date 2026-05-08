@@ -16,7 +16,8 @@ export function connectCoop(url, { roomId, name, onMessage, onOpen, onClose } = 
   });
   ws.addEventListener("message", (ev) => {
     try {
-      onMessage?.(JSON.parse(String(ev.data)));
+      const parsed = JSON.parse(String(ev.data));
+      onMessage?.(parsed);
     } catch {
       /* ignore */
     }
