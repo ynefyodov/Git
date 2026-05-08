@@ -265,10 +265,10 @@ export const ADVENTURE_VISUALS = {
   },
   city_street: {
     backgroundKey: "docks_bg",
-    moodboardCrop: { x: 0.245, y: 0.0, w: 0.255, h: 0.3 },
+    moodboardCrop: { x: 0.24, y: 0.0, w: 0.26, h: 0.3 },
     moodboardVariantCrops: {
-      dry: { x: 0.245, y: 0.0, w: 0.127, h: 0.3 },
-      rain: { x: 0.373, y: 0.0, w: 0.127, h: 0.3 },
+      dry: { x: 0.24, y: 0.0, w: 0.13, h: 0.3 },
+      rain: { x: 0.37, y: 0.0, w: 0.13, h: 0.3 },
     },
     baseColor: "#1a212b",
     lineColor: "#273446",
@@ -297,10 +297,10 @@ export const ADVENTURE_VISUALS = {
   },
   forest_path: {
     backgroundKey: "tavern_bg",
-    moodboardCrop: { x: 0.252, y: 0.3, w: 0.248, h: 0.32 },
+    moodboardCrop: { x: 0.24, y: 0.3, w: 0.26, h: 0.32 },
     moodboardVariantCrops: {
-      clear: { x: 0.252, y: 0.3, w: 0.124, h: 0.32 },
-      foggy: { x: 0.376, y: 0.3, w: 0.124, h: 0.32 },
+      clear: { x: 0.24, y: 0.3, w: 0.13, h: 0.32 },
+      foggy: { x: 0.37, y: 0.3, w: 0.13, h: 0.32 },
     },
     baseColor: "#18251a",
     lineColor: "#243b2a",
@@ -309,10 +309,10 @@ export const ADVENTURE_VISUALS = {
   },
   dark_forest: {
     backgroundKey: "tavern_bg",
-    moodboardCrop: { x: 0.5, y: 0.3, w: 0.245, h: 0.32 },
+    moodboardCrop: { x: 0.5, y: 0.3, w: 0.24, h: 0.32 },
     moodboardVariantCrops: {
-      night: { x: 0.5, y: 0.3, w: 0.1225, h: 0.32 },
-      mist: { x: 0.6225, y: 0.3, w: 0.1225, h: 0.32 },
+      night: { x: 0.5, y: 0.3, w: 0.12, h: 0.32 },
+      mist: { x: 0.62, y: 0.3, w: 0.12, h: 0.32 },
     },
     baseColor: "#0f1a13",
     lineColor: "#1a2a20",
@@ -357,10 +357,10 @@ export const ADVENTURE_VISUALS = {
   },
   castle_courtyard: {
     backgroundKey: "docks_bg",
-    moodboardCrop: { x: 0.62, y: 0.62, w: 0.22, h: 0.34 },
+    moodboardCrop: { x: 0.6, y: 0.62, w: 0.24, h: 0.34 },
     moodboardVariantCrops: {
-      banner: { x: 0.62, y: 0.62, w: 0.11, h: 0.34 },
-      siege: { x: 0.73, y: 0.62, w: 0.11, h: 0.34 },
+      banner: { x: 0.6, y: 0.62, w: 0.12, h: 0.34 },
+      siege: { x: 0.72, y: 0.62, w: 0.12, h: 0.34 },
     },
     baseColor: "#1f2228",
     lineColor: "#2d3440",
