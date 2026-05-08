@@ -40,12 +40,13 @@ const upgradeTitleEl = document.getElementById("upgrade-title");
 const upgradeDescEl = document.getElementById("upgrade-desc");
 const upgradeOptionsEl = document.getElementById("upgrade-options");
 const coopWsUrlInput = document.getElementById("coop-ws-url");
-const coopHostBtn = document.getElementById("coop-host-btn");
-const coopGuestBtn = document.getElementById("coop-guest-btn");
+const coopRoomIdInput = document.getElementById("coop-room-id");
+const coopPlayerNameInput = document.getElementById("coop-player-name");
+const coopJoinBtn = document.getElementById("coop-join-btn");
+const coopReadyBtn = document.getElementById("coop-ready-btn");
+const coopStartBtn = document.getElementById("coop-start-btn");
 const coopStatusEl = document.getElementById("coop-status");
-const coopHostShare = document.getElementById("coop-host-share");
-const coopHostUrlRows = document.getElementById("coop-host-url-rows");
-const coopHostShareHint = document.getElementById("coop-host-share-hint");
+const coopRoomPlayers = document.getElementById("coop-room-players");
 
 canvas.width = ARENA.width;
 canvas.height = ARENA.height;
@@ -65,6 +66,13 @@ const state = {
   guestInput: null,
   coopRole: "solo",
   coopConn: null,
+  coopSelfId: null,
+  coopRoomId: "public",
+  coopPlayers: [],
+  coopReady: false,
+  coopCanStart: false,
+  coopStarted: false,
+  coopActiveGuestId: null,
   coopGuestConnected: false,
   coopLastSendMs: 0,
   guestInputCapture: null,
@@ -90,9 +98,6 @@ const state = {
 
 /** Увеличивается при каждом disconnectCoop — чтобы игнорировать отложенный onClose после смены комнаты. */
 let coopSessionGeneration = 0;
-
-/** Поколение refreshCoopHostShare — отменяет устаревшие await после нового обновления списка URL. */
-let coopHostShareRefreshSeq = 0;
 
 function buildClassButtons() {
   if (!classButtonsEl) return;
@@ -146,11 +151,18 @@ function disconnectCoop() {
   state.coopConn?.close();
   state.coopConn = null;
   state.coopRole = "solo";
+  state.coopSelfId = null;
+  state.coopPlayers = [];
+  state.coopReady = false;
+  state.coopCanStart = false;
+  state.coopStarted = false;
+  state.coopActiveGuestId = null;
   state.coopGuestConnected = false;
   state.guestInput = null;
   state.guestSnapshot = null;
   if (coopStatusEl) coopStatusEl.textContent = "";
-  hideCoopHostSharePanel();
+  renderLobbyPlayers();
+  syncLobbyButtons();
 }
 
 function snapshotForGuest() {
@@ -203,7 +215,7 @@ function snapshotForGuest() {
 }
 
 function broadcastCoopIfHost() {
-  if (state.coopRole !== "host" || !state.coopConn?.ready) return;
+  if (state.coopRole !== "host" || !state.coopConn?.ready || !state.coopStarted) return;
   const now = Date.now();
   if (now - state.coopLastSendMs < 50) return;
   state.coopLastSendMs = now;
@@ -769,7 +781,12 @@ function stepGuestFrame(ts) {
   const deltaSeconds = Math.min(0.05, (ts - state.lastTs) / 1000);
   state.lastTs = ts;
   state.fps = 1 / Math.max(deltaSeconds, 0.0001);
-  if (state.coopConn?.ready && state.guestInputCapture) {
+  if (
+    state.coopConn?.ready
+    && state.guestInputCapture
+    && state.coopStarted
+    && state.coopSelfId === state.coopActiveGuestId
+  ) {
     state.coopConn.send({
       type: "input",
       keys: state.guestInputCapture.snapshotKeys(),
@@ -916,129 +933,127 @@ function getCoopUrl() {
   return (coopWsUrlInput?.value ?? "ws://127.0.0.1:8765").trim() || "ws://127.0.0.1:8765";
 }
 
-function hideCoopHostSharePanel() {
-  coopHostShare?.classList.add("hidden");
-  if (coopHostUrlRows) coopHostUrlRows.innerHTML = "";
-  if (coopHostShareHint) coopHostShareHint.textContent = "";
+function getRoomId() {
+  return (coopRoomIdInput?.value ?? "public").trim() || "public";
 }
 
-/** Порт из поля URL (для LAN-подсказок); без порта для ws — 8765. */
-function parseCoopPortFromUrl(urlStr) {
-  try {
-    const normalized = /^wss?:\/\//i.test(urlStr) ? urlStr : `ws://${urlStr}`;
-    const u = new URL(normalized);
-    if (u.port) return Number(u.port);
-    if (/^wss:/i.test(normalized)) return 443;
-    return 8765;
-  } catch {
-    return 8765;
-  }
+function getPlayerName() {
+  return (coopPlayerNameInput?.value ?? "Player").trim() || "Player";
 }
 
-function addCoopHostUrlRow(label, url) {
-  if (!coopHostUrlRows) return;
-  const div = document.createElement("div");
-  div.className = "coop-url-row";
-  const lab = document.createElement("span");
-  lab.className = "coop-url-label";
-  lab.textContent = label;
-  const code = document.createElement("code");
-  code.className = "coop-url-value";
-  code.textContent = url;
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "coop-copy-btn";
-  btn.textContent = "Копировать";
-  btn.addEventListener("click", () => void copyCoopInviteUrl(url));
-  div.append(lab, code, btn);
-  coopHostUrlRows.appendChild(div);
+function isHost() {
+  return state.coopRole === "host";
 }
 
-async function copyCoopInviteUrl(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    if (coopHostShareHint) coopHostShareHint.textContent = "Скопировано в буфер — вставь гостю в чат.";
-  } catch {
-    if (coopWsUrlInput) {
-      coopWsUrlInput.value = text;
-      coopWsUrlInput.select();
-      document.execCommand("copy");
-      if (coopHostShareHint) coopHostShareHint.textContent = "Скопировано через поле URL выше.";
-    }
-  }
+function isConnectedToLobby() {
+  return Boolean(state.coopConn?.ready && (isHost() || state.coopRole === "guest"));
 }
 
-async function refreshCoopHostShare() {
-  if (!coopHostShare || !coopHostUrlRows || !coopHostShareHint) return;
-  if (state.coopRole !== "host" || !state.coopConn?.ready) {
-    hideCoopHostSharePanel();
+function renderLobbyPlayers() {
+  if (!coopRoomPlayers) return;
+  coopRoomPlayers.innerHTML = "";
+  if (state.coopPlayers.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "coop-hint";
+    empty.textContent = "Нет активной комнаты.";
+    coopRoomPlayers.appendChild(empty);
     return;
   }
-  coopHostShareRefreshSeq += 1;
-  const seq = coopHostShareRefreshSeq;
+  for (const p of state.coopPlayers) {
+    const row = document.createElement("div");
+    row.className = "coop-url-row";
+    const name = document.createElement("span");
+    name.className = "coop-url-label";
+    const marks = [];
+    if (p.role === "host") marks.push("host");
+    if (p.id === state.coopActiveGuestId && state.coopStarted) marks.push("input");
+    name.textContent = marks.length ? `${p.name} (${marks.join(", ")})` : p.name;
+    const status = document.createElement("code");
+    status.className = "coop-url-value";
+    status.textContent = p.role === "host"
+      ? (state.coopStarted ? "в матче" : "готовит старт")
+      : (p.ready ? "ready" : "ожидает");
+    row.append(name, status);
+    coopRoomPlayers.appendChild(row);
+  }
+}
 
-  coopHostShare.classList.remove("hidden");
-  coopHostUrlRows.innerHTML = "";
-  const seen = new Set();
-  const current = getCoopUrl();
-  const port = parseCoopPortFromUrl(current);
+function syncLobbyButtons() {
+  if (coopReadyBtn) {
+    const canToggleReady = isConnectedToLobby() && !isHost() && !state.coopStarted;
+    coopReadyBtn.disabled = !canToggleReady;
+    coopReadyBtn.textContent = state.coopReady ? "Не готов" : "Готов";
+  }
+  if (coopStartBtn) {
+    coopStartBtn.disabled = !(isConnectedToLobby() && isHost() && state.coopCanStart && !state.coopStarted);
+  }
+}
 
-  function pushRow(label, url) {
-    if (seen.has(url)) return;
-    seen.add(url);
-    addCoopHostUrlRow(label, url);
+function updateLobbyFromRoomState(msg) {
+  state.coopRoomId = msg.roomId ?? state.coopRoomId;
+  state.coopPlayers = Array.isArray(msg.players) ? msg.players : [];
+  state.coopCanStart = Boolean(msg.canStart);
+  state.coopStarted = Boolean(msg.started);
+  state.coopActiveGuestId = msg.activeGuestId ?? null;
+  const me = state.coopPlayers.find((p) => p.id === state.coopSelfId);
+  state.coopReady = Boolean(me?.ready);
+  state.coopRole = me?.role ?? state.coopRole;
+  state.coopGuestConnected = state.coopPlayers.some((p) => p.role === "guest");
+
+  if (state.started && !state.coopGuestConnected && state.player2) {
+    state.player2 = null;
+    state.guestInput = null;
   }
 
-  pushRow("Как в поле URL", current);
+  renderLobbyPlayers();
+  syncLobbyButtons();
 
-  if (window.coopHostInfo?.getLanWsUrls) {
-    try {
-      const lan = await window.coopHostInfo.getLanWsUrls(port);
-      if (seq !== coopHostShareRefreshSeq) return;
-      for (const u of lan) pushRow("LAN (этот ПК)", u);
-    } catch {
-      /* ignore */
-    }
-    if (seq !== coopHostShareRefreshSeq) return;
-    coopHostShareHint.textContent =
-      "Через интернет без проброса порта: wss:// из cloudflared — см. TUNNEL_COOP.md.";
-  } else {
-    coopHostShareHint.textContent =
-      "В браузере список LAN недоступен — открой в Electron или вручную ws://IP из ipconfig.";
-  }
-
-  if (/^ws:\/\//i.test(current)) {
-    try {
-      const r = await fetch("https://api.ipify.org?format=json", { cache: "no-store" });
-      if (seq !== coopHostShareRefreshSeq) return;
-      if (r.ok) {
-        const data = await r.json();
-        if (seq !== coopHostShareRefreshSeq) return;
-        const ip = data?.ip;
-        if (ip && typeof ip === "string") {
-          const ext = `ws://${ip}:${port}`;
-          pushRow("Интернет (проброс TCP на роутере)", ext);
-        }
-      }
-    } catch {
-      /* ignore */
+  if (coopStatusEl) {
+    if (state.coopStarted) {
+      coopStatusEl.textContent = `Матч запущен в комнате ${state.coopRoomId}.`;
+    } else if (isHost()) {
+      coopStatusEl.textContent = state.coopCanStart
+        ? `Комната ${state.coopRoomId}: все готовы, можно запускать.`
+        : `Комната ${state.coopRoomId}: ждём готовность всех гостей.`;
+    } else {
+      coopStatusEl.textContent = `Комната ${state.coopRoomId}: ${state.coopReady ? "вы готовы" : "нажмите Готов"}.`;
     }
   }
 }
 
-function onHostCoopMessage(msg) {
+function handleLobbyMessage(msg) {
   if (!msg || typeof msg.type !== "string") return;
-  if (msg.type === "peer") {
-    state.coopGuestConnected = Boolean(msg.guest);
+  if (msg.type === "joined") {
+    state.coopSelfId = msg.selfId ?? null;
+    state.coopRoomId = msg.roomId ?? state.coopRoomId;
+    state.coopRole = msg.role === "host" ? "host" : "guest";
+    state.coopStarted = false;
+    state.coopReady = false;
+    state.guestSnapshot = null;
+    if (state.coopRole === "guest") {
+      state.guestInputCapture = attachGuestKeyCapture();
+    }
     if (coopStatusEl) {
-      coopStatusEl.textContent = msg.guest
-        ? "Кооп: гость в сети (во «В бой» появятся два героя)"
-        : "Кооп: ожидание гостя…";
+      coopStatusEl.textContent = `Вошли в комнату ${state.coopRoomId} как ${state.coopRole}.`;
     }
-    if (!msg.guest && state.started && state.player2) {
-      state.player2 = null;
-      state.guestInput = null;
+    syncLobbyButtons();
+    return;
+  }
+  if (msg.type === "roomState") {
+    updateLobbyFromRoomState(msg);
+    return;
+  }
+  if (msg.type === "matchStarted") {
+    state.coopStarted = true;
+    state.coopActiveGuestId = msg.activeGuestId ?? state.coopActiveGuestId;
+    if (coopStatusEl) {
+      coopStatusEl.textContent = `Матч в комнате ${msg.roomId ?? state.coopRoomId} запущен.`;
     }
+    syncLobbyButtons();
+    return;
+  }
+  if (msg.type === "state" && msg.payload && state.coopRole === "guest") {
+    state.guestSnapshot = msg.payload;
     return;
   }
   if (msg.type === "input" && Array.isArray(msg.keys) && state.coopRole === "host") {
@@ -1046,82 +1061,52 @@ function onHostCoopMessage(msg) {
   }
 }
 
-if (coopHostBtn) {
-  coopHostBtn.addEventListener("click", () => {
+if (coopJoinBtn) {
+  coopJoinBtn.addEventListener("click", () => {
     disconnectCoop();
-    state.coopRole = "host";
-    const url = getCoopUrl();
     const sessionAtConnect = coopSessionGeneration;
-    state.coopConn = connectCoop(url, "host", {
-      onMessage: onHostCoopMessage,
+    const url = getCoopUrl();
+    state.coopConn = connectCoop(url, {
+      roomId: getRoomId(),
+      name: getPlayerName(),
+      onMessage: handleLobbyMessage,
       onOpen() {
-        if (coopStatusEl) coopStatusEl.textContent = "Хост: ждём гостя…";
-        void refreshCoopHostShare();
+        if (coopStatusEl) coopStatusEl.textContent = "Подключение к lobby relay…";
       },
       onClose(detail) {
         if (sessionAtConnect !== coopSessionGeneration) return;
         state.coopConn = null;
+        state.coopRole = "solo";
+        state.coopPlayers = [];
+        state.coopCanStart = false;
+        state.coopStarted = false;
+        state.coopActiveGuestId = null;
+        renderLobbyPlayers();
+        syncLobbyButtons();
         if (coopStatusEl) {
           coopStatusEl.textContent = detail?.opened
-            ? "Связь с relay прервалась (туннель, run-coop-server или сеть). Запусти снова и нажми «Я хост» с актуальным URL."
-            : "Не удалось открыть WebSocket. Проверь URL (ws/wss), порт и что relay запущен на ПК хоста.";
+            ? "Связь с lobby relay прервалась."
+            : "Не удалось подключиться к lobby relay. Проверь ws/wss URL.";
         }
-        state.coopGuestConnected = false;
-        if (state.started && state.player2) {
-          state.player2 = null;
-          state.guestInput = null;
-        }
-        hideCoopHostSharePanel();
       },
     });
   });
 }
 
-if (coopGuestBtn) {
-  coopGuestBtn.addEventListener("click", () => {
-    disconnectCoop();
-    state.coopRole = "guest";
-    state.guestSnapshot = null;
-    state.guestInputCapture = attachGuestKeyCapture();
-    const url = getCoopUrl();
-    const sessionAtConnect = coopSessionGeneration;
-    state.coopConn = connectCoop(url, "guest", {
-      onMessage(msg) {
-        if (msg?.type === "state" && msg.payload) {
-          state.guestSnapshot = msg.payload;
-        }
-        if (msg?.type === "peer" && coopStatusEl) {
-          coopStatusEl.textContent = msg.host
-            ? "Гость: в комнате, ждём состояние от хоста"
-            : "Гость: нет хоста в комнате";
-        }
-      },
-      onOpen() {
-        if (coopStatusEl) coopStatusEl.textContent = "Гость: подключено";
-        classPanel?.classList.add("hidden");
-        introPanel?.classList.add("hidden");
-        intermissionPanel?.classList.add("hidden");
-        upgradePanel?.classList.add("hidden");
-      },
-      onClose(detail) {
-        if (sessionAtConnect !== coopSessionGeneration) return;
-        state.coopConn = null;
-        if (coopStatusEl) {
-          coopStatusEl.textContent = detail?.opened
-            ? "Связь с relay прервалась. Узнай у хоста новый URL (туннель мог обновиться) и снова нажми «Я гость»."
-            : "Не удалось подключиться. Проверь URL как у хоста и что хост уже нажал «Я хост».";
-        }
-        state.guestSnapshot = null;
-      },
-    });
+if (coopReadyBtn) {
+  coopReadyBtn.addEventListener("click", () => {
+    if (!isConnectedToLobby() || isHost() || state.coopStarted) return;
+    const nextReady = !state.coopReady;
+    state.coopConn.send({ type: "setReady", ready: nextReady });
   });
 }
 
-coopWsUrlInput?.addEventListener("input", () => {
-  if (state.coopRole === "host" && state.coopConn?.ready) {
-    void refreshCoopHostShare();
-  }
-});
+if (coopStartBtn) {
+  coopStartBtn.addEventListener("click", () => {
+    if (!isConnectedToLobby() || !isHost() || !state.coopCanStart || state.coopStarted) return;
+    state.coopConn.send({ type: "startMatch" });
+  });
+}
 
 buildClassButtons();
 showClassPanel();

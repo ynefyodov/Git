@@ -1,13 +1,17 @@
-/** WebSocket-клиент для relay-сервера (см. server/coop-server.mjs). */
+/** WebSocket-клиент для lobby relay (см. server/coop-server.mjs). */
 
 const GUEST_KEYS = new Set(["arrowup", "arrowleft", "arrowdown", "arrowright", " "]);
 
-export function connectCoop(url, role, { onMessage, onOpen, onClose } = {}) {
+export function connectCoop(url, { roomId, name, onMessage, onOpen, onClose } = {}) {
   const ws = new WebSocket(url);
   let opened = false;
   ws.addEventListener("open", () => {
     opened = true;
-    ws.send(JSON.stringify({ type: "iam", role }));
+    ws.send(JSON.stringify({
+      type: "hello",
+      roomId: roomId ?? "public",
+      name: name ?? "Player",
+    }));
     onOpen?.();
   });
   ws.addEventListener("message", (ev) => {

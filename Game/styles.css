@@ -281,7 +281,9 @@ p {
   margin-top: 6px;
 }
 
-#coop-ws-url {
+#coop-ws-url,
+#coop-room-id,
+#coop-player-name {
   flex: 1 1 200px;
   min-width: 160px;
   padding: 8px 10px;
@@ -290,6 +292,14 @@ p {
   background: #1a1418;
   color: #f3e7d4;
   font-size: 13px;
+}
+
+#coop-room-id {
+  flex: 0 0 120px;
+}
+
+#coop-player-name {
+  flex: 0 0 160px;
 }
 
 .coop-btn {
