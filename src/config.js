@@ -248,6 +248,143 @@ export const ADVENTURE_ROUTE_GRAPH = {
   unknown: { left: "forest_path", forward: "city_street", right: "river" },
 };
 
+export const ADVENTURE_VISUALS = {
+  tavern_interior: {
+    backgroundKey: "tavern_bg",
+    moodboardCrop: { x: 0.0, y: 0.0, w: 0.24, h: 0.3 },
+    moodboardVariantCrops: {
+      day: { x: 0.0, y: 0.0, w: 0.12, h: 0.3 },
+      night: { x: 0.12, y: 0.0, w: 0.12, h: 0.3 },
+      quiet: { x: 0.0, y: 0.0, w: 0.12, h: 0.3 },
+      busy: { x: 0.12, y: 0.0, w: 0.12, h: 0.3 },
+    },
+    baseColor: "#2a1d1a",
+    lineColor: "#3f2a26",
+    accentColor: "#5e3e2e",
+    overlayColor: "rgba(80, 42, 18, 0.2)",
+  },
+  city_street: {
+    backgroundKey: "docks_bg",
+    moodboardCrop: { x: 0.24, y: 0.0, w: 0.26, h: 0.3 },
+    moodboardVariantCrops: {
+      dry: { x: 0.24, y: 0.0, w: 0.13, h: 0.3 },
+      rain: { x: 0.37, y: 0.0, w: 0.13, h: 0.3 },
+    },
+    baseColor: "#1a212b",
+    lineColor: "#273446",
+    accentColor: "#364860",
+    overlayColor: "rgba(40, 58, 86, 0.2)",
+  },
+  market_square: {
+    backgroundKey: "docks_bg",
+    moodboardCrop: { x: 0.5, y: 0.0, w: 0.24, h: 0.3 },
+    baseColor: "#222026",
+    lineColor: "#393145",
+    accentColor: "#524064",
+    overlayColor: "rgba(82, 55, 94, 0.2)",
+  },
+  forge: {
+    backgroundKey: "tavern_bg",
+    moodboardCrop: { x: 0.0, y: 0.3, w: 0.24, h: 0.32 },
+    moodboardVariantCrops: {
+      inside: { x: 0.0, y: 0.3, w: 0.12, h: 0.32 },
+      outside: { x: 0.12, y: 0.3, w: 0.12, h: 0.32 },
+    },
+    baseColor: "#2c1f1a",
+    lineColor: "#4a3028",
+    accentColor: "#7a4a2f",
+    overlayColor: "rgba(140, 62, 18, 0.25)",
+  },
+  forest_path: {
+    backgroundKey: "tavern_bg",
+    moodboardCrop: { x: 0.24, y: 0.3, w: 0.26, h: 0.32 },
+    moodboardVariantCrops: {
+      clear: { x: 0.24, y: 0.3, w: 0.13, h: 0.32 },
+      foggy: { x: 0.37, y: 0.3, w: 0.13, h: 0.32 },
+    },
+    baseColor: "#18251a",
+    lineColor: "#243b2a",
+    accentColor: "#335039",
+    overlayColor: "rgba(32, 90, 54, 0.22)",
+  },
+  dark_forest: {
+    backgroundKey: "tavern_bg",
+    moodboardCrop: { x: 0.5, y: 0.3, w: 0.24, h: 0.32 },
+    moodboardVariantCrops: {
+      night: { x: 0.5, y: 0.3, w: 0.12, h: 0.32 },
+      mist: { x: 0.62, y: 0.3, w: 0.12, h: 0.32 },
+    },
+    baseColor: "#0f1a13",
+    lineColor: "#1a2a20",
+    accentColor: "#273f30",
+    overlayColor: "rgba(18, 44, 28, 0.34)",
+  },
+  cave: {
+    backgroundKey: "docks_bg",
+    moodboardCrop: { x: 0.0, y: 0.62, w: 0.24, h: 0.34 },
+    moodboardVariantCrops: {
+      wet: { x: 0.0, y: 0.62, w: 0.12, h: 0.34 },
+      echoing: { x: 0.12, y: 0.62, w: 0.12, h: 0.34 },
+    },
+    baseColor: "#181c22",
+    lineColor: "#252e39",
+    accentColor: "#344558",
+    overlayColor: "rgba(36, 48, 70, 0.24)",
+  },
+  ruins_crypt: {
+    backgroundKey: "docks_bg",
+    moodboardCrop: { x: 0.24, y: 0.62, w: 0.18, h: 0.34 },
+    moodboardVariantCrops: {
+      ruins: { x: 0.24, y: 0.62, w: 0.09, h: 0.34 },
+      crypt: { x: 0.33, y: 0.62, w: 0.09, h: 0.34 },
+    },
+    baseColor: "#201b24",
+    lineColor: "#32293a",
+    accentColor: "#4b3a5c",
+    overlayColor: "rgba(68, 44, 78, 0.24)",
+  },
+  campfire_camp: {
+    backgroundKey: "tavern_bg",
+    moodboardCrop: { x: 0.42, y: 0.62, w: 0.18, h: 0.34 },
+    moodboardVariantCrops: {
+      dusk: { x: 0.42, y: 0.62, w: 0.09, h: 0.34 },
+      night: { x: 0.51, y: 0.62, w: 0.09, h: 0.34 },
+    },
+    baseColor: "#2a2118",
+    lineColor: "#3e2f23",
+    accentColor: "#6a482e",
+    overlayColor: "rgba(120, 76, 34, 0.22)",
+  },
+  castle_courtyard: {
+    backgroundKey: "docks_bg",
+    moodboardCrop: { x: 0.6, y: 0.62, w: 0.24, h: 0.34 },
+    moodboardVariantCrops: {
+      banner: { x: 0.6, y: 0.62, w: 0.12, h: 0.34 },
+      siege: { x: 0.72, y: 0.62, w: 0.12, h: 0.34 },
+    },
+    baseColor: "#1f2228",
+    lineColor: "#2d3440",
+    accentColor: "#3e4e62",
+    overlayColor: "rgba(52, 70, 94, 0.24)",
+  },
+  river: {
+    backgroundKey: "docks_bg",
+    moodboardCrop: { x: 0.33, y: 0.0, w: 0.17, h: 0.3 },
+    baseColor: "#132331",
+    lineColor: "#1f3a50",
+    accentColor: "#2d5672",
+    overlayColor: "rgba(38, 88, 128, 0.24)",
+  },
+  unknown: {
+    backgroundKey: "tavern_bg",
+    moodboardCrop: { x: 0.74, y: 0.0, w: 0.24, h: 0.3 },
+    baseColor: "#1f1f22",
+    lineColor: "#2f3038",
+    accentColor: "#474a58",
+    overlayColor: "rgba(52, 52, 64, 0.2)",
+  },
+};
+
 export const RACE_DEFS = [
   {
     id: "human",
