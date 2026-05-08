@@ -34,8 +34,10 @@
       <canvas id="game-canvas" width="960" height="540" aria-label="Tavern Arena"></canvas>
       <aside id="class-panel" class="class-panel" aria-live="polite">
         <h3>Создание героя</h3>
-        <p>Выбери <strong>класс</strong>, затем — <strong>стартовую черту</strong>. Остальные черты только <strong>между уровнями</strong> (не в бою).</p>
+        <p>Выбери <strong>расу</strong>, <strong>класс</strong> и <strong>ветку</strong>. Затем выбери стартовые черты.</p>
+        <div class="race-buttons" id="race-buttons"></div>
         <div class="class-buttons" id="class-buttons"></div>
+        <div class="branch-buttons" id="branch-buttons"></div>
       </aside>
       <aside id="intro-panel" class="intro-panel hidden" aria-live="polite">
         <h3>Таверна «Последний кубик»</h3>
@@ -62,7 +64,7 @@
 
     <section class="controls">
       <button id="restart-btn" type="button" disabled>Restart</button>
-      <p>Ходьба: WASD / ЦФЫВ или стрелки. Прыжок: Пробел. Сначала класс и стартовая черта, потом пролог и бой. За XP от убийств открываются черты (если порог достигнут в бою, выбор откроется сразу). Restart — новый лист.</p>
+      <p>Ходьба: WASD / ЦФЫВ или стрелки. Прыжок: Пробел. Активный скилл: E. Сначала раса, класс, ветка и стартовые черты, потом пролог и бой. За XP от убийств открываются новые черты. Restart — новый лист.</p>
     </section>
   </main>
 

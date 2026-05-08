@@ -60,7 +60,13 @@ export function applyEnemyContactDamage(players, enemies, damageTickSeconds) {
       while (enemy._contactCd.length <= pi) enemy._contactCd.push(0);
       if (enemy._contactCd[pi] > 0) continue;
       if (!circlesOverlap(player.x, player.y, player.radius, enemy.x, enemy.y, enemy.radius)) continue;
-      player.hp -= enemy.damage;
+      if ((player.evasionChance ?? 0) > 0 && Math.random() < player.evasionChance) {
+        enemy._contactCd[pi] = damageTickSeconds * 0.45;
+        continue;
+      }
+      const reduction = Math.min(0.8, Math.max(0, player.damageReduction ?? 0));
+      const damage = enemy.damage * (1 - reduction);
+      player.hp -= damage;
       enemy._contactCd[pi] = damageTickSeconds;
     }
   }

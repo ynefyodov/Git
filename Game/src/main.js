@@ -1,9 +1,13 @@
 import {
   ARENA,
   ATTACK_CONFIG,
+  CLASS_ACTIVE_SKILLS,
+  CLASS_BASE_STATS,
   ENEMY_TYPES,
   GAME_CONFIG,
   PROGRESSION_CONFIG,
+  RACE_DEFS,
+  SUBCLASS_BRANCHES,
   WAVES_LEVEL_1,
   WAVES_LEVEL_2,
   perkIdForRole,
@@ -27,7 +31,9 @@ const canvas = document.getElementById("game-canvas");
 const ctx = canvas.getContext("2d");
 const restartBtn = document.getElementById("restart-btn");
 const classPanel = document.getElementById("class-panel");
+const raceButtonsEl = document.getElementById("race-buttons");
 const classButtonsEl = document.getElementById("class-buttons");
+const branchButtonsEl = document.getElementById("branch-buttons");
 const introClassBlurb = document.getElementById("intro-class-blurb");
 const introPanel = document.getElementById("intro-panel");
 const introTextEl = document.getElementById("intro-text");
@@ -59,7 +65,14 @@ const state = {
   level: 1,
   story: null,
   storyId: null,
+  raceId: null,
   heroClass: null,
+  subclassId: null,
+  skillCooldownLeft: 0,
+  skillDurationLeft: 0,
+  skillActive: false,
+  skillRequested: false,
+  remainingLives: 0,
   intermissionShown: false,
   player: null,
   player2: null,
@@ -99,6 +112,102 @@ const state = {
 /** Увеличивается при каждом disconnectCoop — чтобы игнорировать отложенный onClose после смены комнаты. */
 let coopSessionGeneration = 0;
 
+const PERK_TO_STAT = {
+  armor_mastery: "armor",
+  reach_mastery: "range",
+  damage_mastery: "damage",
+  lifesteal_mastery: "lifesteal",
+  attack_speed_mastery: "attackSpeed",
+  move_speed_mastery: "moveSpeed",
+  vital_guard: "armor",
+  blood_oath: "lifesteal",
+  battle_tempo: "attackSpeed",
+  trigger_focus: "attackSpeed",
+  marked_prey: "damage",
+  ghost_step: "moveSpeed",
+  critical_line: "damage",
+  stone_skin: "armor",
+  storm_pulse: "attackSpeed",
+  frost_shell: "armor",
+  fire_brand: "damage",
+  grace_step: "moveSpeed",
+  spirit_strike: "damage",
+  control_field: "range",
+  execute_strike: "damage",
+  chain_reach: "range",
+  quick_lunge: "moveSpeed",
+  totem_rhythm: "attackSpeed",
+  siphon_link: "lifesteal",
+  piercing_volley: "range",
+  war_cry: "damage",
+};
+
+function getRaceDef() {
+  return RACE_DEFS.find((r) => r.id === state.raceId) ?? null;
+}
+
+function getClassBaseStats() {
+  return CLASS_BASE_STATS[state.heroClass] ?? { hp: 120, combatRole: "melee" };
+}
+
+function getBranchDefs() {
+  return SUBCLASS_BRANCHES[state.heroClass] ?? [];
+}
+
+function selectedBranchDef() {
+  return getBranchDefs().find((b) => b.id === state.subclassId) ?? null;
+}
+
+function getBuildStats() {
+  const raceMods = getRaceDef()?.modifiers ?? {};
+  const classStats = getClassBaseStats();
+  const branch = selectedBranchDef();
+  const focus = branch?.focus ?? null;
+
+  const ranks = {
+    armor: 0,
+    range: 0,
+    damage: 0,
+    lifesteal: 0,
+    attackSpeed: 0,
+    moveSpeed: 0,
+  };
+  for (const [id, count] of Object.entries(state.perkStacks)) {
+    const key = PERK_TO_STAT[id];
+    if (key && key in ranks) ranks[key] += count;
+  }
+
+  const focusBonus = (key) => (focus === key ? 0.08 : 0);
+
+  return {
+    maxHp: Math.round((classStats.hp ?? 120) * (raceMods.hp ?? 1) * (1 + ranks.armor * 0.03)),
+    armor: (classStats.armor ?? 0) + (raceMods.armor ?? 0) + ranks.armor * 0.03 + focusBonus("armor"),
+    damageMul:
+      (raceMods.damage ?? 1)
+      * (1 + ranks.damage * 0.08 + focusBonus("damage"))
+      * (state.skillActive && CLASS_ACTIVE_SKILLS[state.heroClass]?.effect === "damageBurst" ? 1.25 : 1),
+    rangeMul: 1 + ranks.range * 0.08 + focusBonus("range"),
+    lifesteal:
+      (raceMods.lifesteal ?? 0)
+      + ranks.lifesteal * 0.05
+      + (state.skillActive && CLASS_ACTIVE_SKILLS[state.heroClass]?.effect === "graceAura" ? 0.06 : 0),
+    attackSpeedMul:
+      (raceMods.attackSpeed ?? 1)
+      * (1 + ranks.attackSpeed * 0.08 + focusBonus("attackSpeed"))
+      * (state.skillActive && CLASS_ACTIVE_SKILLS[state.heroClass]?.effect === "attackBurst" ? 1.35 : 1),
+    moveSpeedMul:
+      (raceMods.moveSpeed ?? 1)
+      * (1 + ranks.moveSpeed * 0.07 + focusBonus("moveSpeed"))
+      * (state.skillActive && CLASS_ACTIVE_SKILLS[state.heroClass]?.effect === "evasionBurst" ? 1.2 : 1),
+    evasion:
+      (raceMods.evasion ?? 0)
+      + (state.skillActive && CLASS_ACTIVE_SKILLS[state.heroClass]?.effect === "evasionBurst" ? 0.35 : 0),
+    xpMul: raceMods.xpGain ?? 1,
+    baseChainTargets: classStats.chainTargets ?? 0,
+    activeChainBonus: state.skillActive && CLASS_ACTIVE_SKILLS[state.heroClass]?.effect === "chainBurst" ? 2 : 0,
+  };
+}
+
 function buildClassButtons() {
   if (!classButtonsEl) return;
   classButtonsEl.innerHTML = "";
@@ -110,6 +219,47 @@ function buildClassButtons() {
     btn.innerHTML = `<strong>${def.name}</strong><small>${def.tagline}</small>`;
     btn.addEventListener("click", () => afterClassChosen(def.id));
     classButtonsEl.appendChild(btn);
+  }
+}
+
+function buildRaceButtons() {
+  if (!raceButtonsEl) return;
+  raceButtonsEl.innerHTML = "";
+  for (const race of RACE_DEFS) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "race-btn";
+    btn.dataset.race = race.id;
+    btn.innerHTML = `<strong>${race.name}</strong><small>${race.passive}</small>`;
+    btn.addEventListener("click", () => {
+      state.raceId = race.id;
+      for (const el of raceButtonsEl.querySelectorAll(".race-btn")) {
+        el.style.outline = el.dataset.race === race.id ? "2px solid #e2c27a" : "none";
+      }
+    });
+    raceButtonsEl.appendChild(btn);
+  }
+}
+
+function buildBranchButtons() {
+  if (!branchButtonsEl) return;
+  branchButtonsEl.innerHTML = "";
+  for (const branch of getBranchDefs()) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "branch-btn";
+    btn.dataset.branch = branch.id;
+    btn.innerHTML = `<strong>${branch.name}</strong><small>Фокус: ${branch.focus}</small>`;
+    btn.addEventListener("click", () => {
+      state.subclassId = branch.id;
+      for (const el of branchButtonsEl.querySelectorAll(".branch-btn")) {
+        el.style.outline = el.dataset.branch === branch.id ? "2px solid #e2c27a" : "none";
+      }
+      if (state.raceId && state.heroClass && state.subclassId) {
+        completeCharacterSetup();
+      }
+    });
+    branchButtonsEl.appendChild(btn);
   }
 }
 
@@ -228,12 +378,19 @@ function showClassPanel() {
   state.started = false;
   state.story = null;
   state.storyId = null;
+  state.raceId = null;
   state.heroClass = null;
+  state.subclassId = null;
   state.perkStacks = {};
   state.gainedPerks = [];
   state.pendingUpgrades = 0;
   state.choosingUpgrade = false;
   state.lastUpgrade = "";
+  state.skillCooldownLeft = 0;
+  state.skillDurationLeft = 0;
+  state.skillActive = false;
+  state.skillRequested = false;
+  state.remainingLives = 0;
   if (introClassBlurb) introClassBlurb.textContent = "";
   classPanel.classList.remove("hidden");
   introPanel.classList.add("hidden");
@@ -242,21 +399,37 @@ function showClassPanel() {
   battleBtn.disabled = true;
   state.player2 = null;
   state.guestInput = null;
+  buildRaceButtons();
+  buildClassButtons();
+  buildBranchButtons();
 }
 
 function afterClassChosen(heroClass) {
   state.heroClass = heroClass;
+  state.subclassId = null;
+  buildBranchButtons();
+  if (!state.raceId) {
+    if (introClassBlurb) introClassBlurb.textContent = "Сначала выбери расу.";
+    return;
+  }
+}
+
+function completeCharacterSetup() {
+  if (!state.raceId || !state.heroClass || !state.subclassId) return;
   state.story = pickRandomStory();
   state.storyId = state.story.id;
   introTextEl.textContent = state.story.introText;
   if (introClassBlurb) {
-    introClassBlurb.textContent = getHeroClass(heroClass)?.tagline ?? "";
+    const raceName = getRaceDef()?.name ?? "";
+    const className = getHeroClass(state.heroClass)?.name ?? "";
+    const branchName = selectedBranchDef()?.name ?? "";
+    introClassBlurb.textContent = `${raceName} · ${className} · ${branchName}`;
   }
   classPanel.classList.add("hidden");
   introPanel.classList.add("hidden");
   battleBtn.disabled = true;
   state.runPhase = "introPickStartingFeat";
-  state.pendingUpgrades = 1;
+  state.pendingUpgrades = 1 + (getRaceDef()?.modifiers?.bonusStartPerks ?? 0);
   state.choosingUpgrade = true;
   renderUpgradePanel();
 }
@@ -286,26 +459,28 @@ function stackForRole(role) {
 }
 
 function getAttackStats() {
+  const build = getBuildStats();
   const rapidFireStacks = Math.min(
     stackForRole("rapid"),
     PROGRESSION_CONFIG.maxRapidFireStacks
   );
   const cooldownBase = ATTACK_CONFIG.cooldown
-    * Math.pow(PROGRESSION_CONFIG.rapidFireCooldownMultiplier, rapidFireStacks);
+    * Math.pow(PROGRESSION_CONFIG.rapidFireCooldownMultiplier, rapidFireStacks)
+    / build.attackSpeedMul;
   const powerStacks = stackForRole("power");
-  const powerBonus = powerStacks * PROGRESSION_CONFIG.powerShotDamageBonus;
+  const powerBonus = powerStacks * PROGRESSION_CONFIG.powerShotDamageBonus * build.damageMul;
   if (getCombatRole() === "ranged") {
     const cooldown = cooldownBase * 1.12;
-    const damage = ATTACK_CONFIG.rangedProjectileDamage + powerBonus;
-    return { cooldown, damage, range: ATTACK_CONFIG.meleeRange };
+    const damage = ATTACK_CONFIG.rangedProjectileDamage * build.damageMul + powerBonus;
+    return { cooldown, damage, range: ATTACK_CONFIG.meleeRange * build.rangeMul };
   }
   const reachStacks = Math.min(
     stackForRole("reach"),
     PROGRESSION_CONFIG.maxReachStacks
   );
-  const range = ATTACK_CONFIG.meleeRange + reachStacks * PROGRESSION_CONFIG.reachBonusPerStack;
+  const range = (ATTACK_CONFIG.meleeRange + reachStacks * PROGRESSION_CONFIG.reachBonusPerStack) * build.rangeMul;
   const cooldown = cooldownBase;
-  const damage = ATTACK_CONFIG.meleeDamage + powerBonus;
+  const damage = ATTACK_CONFIG.meleeDamage * build.damageMul + powerBonus;
   return { cooldown, damage, range };
 }
 
@@ -324,7 +499,13 @@ function getPerkListText() {
 
 function buildUpgradeChoices() {
   const pool = perksForClass(state.heroClass);
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  const branch = selectedBranchDef();
+  const branchIds = new Set(branch?.perkIds ?? []);
+  const prioritized = pool.filter((p) => branchIds.has(p.id));
+  const fallback = pool.filter((p) => !branchIds.has(p.id));
+  const weighted = [...prioritized, ...fallback];
+  const unique = weighted.filter((item, idx) => weighted.findIndex((p) => p.id === item.id) === idx);
+  const shuffled = [...unique].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, Math.min(3, shuffled.length));
 }
 
@@ -391,6 +572,7 @@ function applyUpgrade(perkId = null) {
 }
 
 function startLevel1Combat() {
+  const build = getBuildStats();
   state.runPhase = "fighting";
   state.level = 1;
   state.started = true;
@@ -407,6 +589,11 @@ function startLevel1Combat() {
     state.player = new Player(ARENA.width / 2 - 70, ARENA.height / 2, 0);
     state.player2 = new Player(ARENA.width / 2 + 70, ARENA.height / 2, 1);
     state.player2.combatStyle = getCombatRole() === "ranged" ? "ranged" : "melee";
+    state.player2.maxHp = build.maxHp;
+    state.player2.hp = build.maxHp;
+    state.player2.speedMultiplier = build.moveSpeedMul;
+    state.player2.damageReduction = Math.min(0.75, build.armor);
+    state.player2.evasionChance = Math.min(0.6, build.evasion);
     state.guestInput = new Set();
   } else {
     state.player = new Player(ARENA.width / 2, ARENA.height / 2, 0);
@@ -414,7 +601,17 @@ function startLevel1Combat() {
     state.guestInput = null;
   }
   state.player.combatStyle = getCombatRole() === "ranged" ? "ranged" : "melee";
+  state.player.maxHp = build.maxHp;
+  state.player.hp = build.maxHp;
+  state.player.speedMultiplier = build.moveSpeedMul;
+  state.player.damageReduction = Math.min(0.75, build.armor);
+  state.player.evasionChance = Math.min(0.6, build.evasion);
   state.input ??= Player.setupInput();
+  state.remainingLives = getRaceDef()?.modifiers?.extraLives ?? 0;
+  const classSkill = CLASS_ACTIVE_SKILLS[state.heroClass];
+  state.skillCooldownLeft = classSkill?.cooldown ?? 0;
+  state.skillDurationLeft = 0;
+  state.skillActive = false;
   state.spawner = new WaveSpawner({ waves: WAVES_LEVEL_1, bossTypeId: "tavern_guard_boss" });
   state.pendingUpgrades = 0;
   state.choosingUpgrade = false;
@@ -436,6 +633,7 @@ function showIntermissionLevel2() {
 }
 
 function beginLevel2CombatAfterFeats() {
+  const build = getBuildStats();
   state.runPhase = "fightingLevel2";
   state.level = 2;
   state.started = true;
@@ -448,12 +646,18 @@ function beginLevel2CombatAfterFeats() {
     state.player.attackCooldownLeft = 0;
     state.player.swingTimeLeft = 0;
     state.player.combatStyle = getCombatRole() === "ranged" ? "ranged" : "melee";
+    state.player.speedMultiplier = build.moveSpeedMul;
+    state.player.damageReduction = Math.min(0.75, build.armor);
+    state.player.evasionChance = Math.min(0.6, build.evasion);
   }
   if (state.player2) {
     state.player2.hp = Math.min(state.player2.maxHp, state.player2.hp);
     state.player2.attackCooldownLeft = 0;
     state.player2.swingTimeLeft = 0;
     state.player2.combatStyle = getCombatRole() === "ranged" ? "ranged" : "melee";
+    state.player2.speedMultiplier = build.moveSpeedMul;
+    state.player2.damageReduction = Math.min(0.75, build.armor);
+    state.player2.evasionChance = Math.min(0.6, build.evasion);
   }
   state.spawner.configure({ waves: WAVES_LEVEL_2, bossTypeId: "dock_warden_boss" });
   state.experience = 0;
@@ -534,10 +738,36 @@ function update(deltaSeconds) {
   }
 
   state.elapsedSeconds += deltaSeconds;
+  const skill = CLASS_ACTIVE_SKILLS[state.heroClass];
+  if (skill) {
+    state.skillCooldownLeft = Math.max(0, state.skillCooldownLeft - deltaSeconds);
+    state.skillDurationLeft = Math.max(0, state.skillDurationLeft - deltaSeconds);
+    state.skillActive = state.skillDurationLeft > 0;
+    if (state.skillRequested && state.skillCooldownLeft <= 0) {
+      state.skillRequested = false;
+      state.skillDurationLeft = skill.duration;
+      state.skillCooldownLeft = skill.cooldown;
+      state.skillActive = true;
+    }
+  } else {
+    state.skillRequested = false;
+  }
+  const build = getBuildStats();
   const playersAlive = activePlayers();
+  for (const pl of playersAlive) {
+    pl.speedMultiplier = build.moveSpeedMul;
+    pl.damageReduction = Math.min(0.75, build.armor + (state.skillActive && skill?.effect === "armorBurst" ? 0.25 : 0));
+    pl.evasionChance = Math.min(0.6, build.evasion);
+  }
   state.player.update(deltaSeconds, state.input);
   if (state.player2 && state.guestInput) {
     state.player2.update(deltaSeconds, state.guestInput);
+  }
+
+  if (state.heroClass === "priest") {
+    for (const pl of playersAlive) {
+      pl.hp = Math.min(pl.maxHp, pl.hp + (CLASS_BASE_STATS.priest.selfRegen ?? 0) * deltaSeconds);
+    }
   }
   state.spawner.update(deltaSeconds, state.elapsedSeconds, state.enemies);
 
@@ -605,7 +835,7 @@ function update(deltaSeconds) {
     }
   }
   const lifeStacks = stackForRole("lifesteal");
-  if (lifeStacks > 0 && hitEvents.length > 0) {
+  if ((lifeStacks > 0 || build.lifesteal > 0) && hitEvents.length > 0) {
     const byOwner = new Map();
     for (const ev of hitEvents) {
       const pl = ev.owner;
@@ -613,7 +843,7 @@ function update(deltaSeconds) {
       byOwner.set(pl, (byOwner.get(pl) ?? 0) + ev.damage);
     }
     for (const [pl, dmg] of byOwner) {
-      const heal = dmg * PROGRESSION_CONFIG.lifestealRatio * lifeStacks;
+      const heal = dmg * ((PROGRESSION_CONFIG.lifestealRatio * lifeStacks) + build.lifesteal);
       pl.hp = Math.min(pl.maxHp, pl.hp + heal);
     }
   }
@@ -624,10 +854,11 @@ function update(deltaSeconds) {
   state.enemies = state.enemies.filter((enemy) => !enemy.dead);
   state.projectiles = state.projectiles.filter((p) => !p.dead);
   const killsThisFrame = aliveBefore - state.enemies.length;
-  const xpThisFrame = defeatedEnemies.reduce((sum, enemy) => {
+  const xpThisFrameBase = defeatedEnemies.reduce((sum, enemy) => {
     const enemyDef = ENEMY_TYPES[enemy.typeId];
     return sum + (enemyDef?.score ?? 1);
   }, 0);
+  const xpThisFrame = Math.round(xpThisFrameBase * build.xpMul);
   state.score += killsThisFrame;
   state.kills += killsThisFrame;
   state.experience += xpThisFrame;
@@ -653,10 +884,15 @@ function update(deltaSeconds) {
 
   for (const pl of playersAlive) {
     if (pl.hp <= 0) {
-      pl.hp = 0;
-      state.ended = true;
-      state.result = "Поражение";
-      break;
+      if (state.remainingLives > 0) {
+        state.remainingLives -= 1;
+        pl.hp = Math.ceil(pl.maxHp * 0.45);
+      } else {
+        pl.hp = 0;
+        state.ended = true;
+        state.result = "Поражение";
+        break;
+      }
     }
   }
 
@@ -855,7 +1091,7 @@ function loop(ts) {
     hp: state.player?.hp ?? 0,
     maxHp: state.player?.maxHp ?? 0,
     hpLabel,
-    className: getHeroClass(state.heroClass)?.name ?? "—",
+    className: `${getRaceDef()?.name ?? "—"} / ${getHeroClass(state.heroClass)?.name ?? "—"} / ${selectedBranchDef()?.name ?? "—"}`,
     charLevel: getCharacterLevel(),
     wave: getWaveHudLabel(),
     enemies: state.enemies.length,
@@ -864,9 +1100,11 @@ function loop(ts) {
     xpToNext: xpProgress.xpToNext,
     elapsed: state.elapsedSeconds,
     fps: state.fps,
-    status: state.result,
+    status: state.skillActive
+      ? `${state.result} · ${CLASS_ACTIVE_SKILLS[state.heroClass]?.name ?? "Скилл"} активен`
+      : `${state.result} · ${CLASS_ACTIVE_SKILLS[state.heroClass]?.name ?? "Скилл"} CD ${Math.ceil(state.skillCooldownLeft)}s`,
     perks: getPerkListText(),
-    lastUpgrade: state.lastUpgrade || "—",
+    lastUpgrade: state.lastUpgrade || `Жизни: ${state.remainingLives}`,
   });
 
   requestAnimationFrame(loop);
@@ -899,10 +1137,17 @@ restartBtn.addEventListener("click", () => {
   state.pendingUpgrades = 0;
   state.choosingUpgrade = false;
   state.grantedCombatUpgrades = 0;
+  state.skillRequested = false;
   renderUpgradePanel();
   state.result = "Не начато";
   restartBtn.disabled = true;
   showClassPanel();
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key.toLowerCase() === "e") {
+    state.skillRequested = true;
+  }
 });
 
 draw();

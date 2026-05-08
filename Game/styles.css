@@ -114,6 +114,15 @@ body {
   width: 100%;
 }
 
+.race-buttons,
+.branch-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  max-width: 860px;
+  width: 100%;
+}
+
 .class-btn {
   min-width: 0;
   padding: 12px 14px;
@@ -124,6 +133,34 @@ body {
   cursor: pointer;
   text-align: left;
   line-height: 1.35;
+}
+
+.race-btn,
+.branch-btn {
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #8a7358;
+  background: rgba(38, 29, 24, 0.95);
+  color: #f7ebd3;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.3;
+  font-size: 13px;
+}
+
+.race-btn small,
+.branch-btn small {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: #d4c4a8;
+  font-weight: normal;
+}
+
+.race-btn:hover,
+.branch-btn:hover {
+  background: #5b4639;
 }
 
 .class-btn small {
