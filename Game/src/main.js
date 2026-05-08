@@ -2,6 +2,7 @@ import {
   ARENA,
   ATTACK_CONFIG,
   CLASS_ACTIVE_SKILLS,
+  ADVENTURE_ROUTE_GRAPH,
   ADVENTURE_LOCATIONS,
   CLASS_BASE_STATS,
   ENEMY_TYPES,
@@ -119,7 +120,7 @@ const state = {
   cameraX: 0,
   cameraY: 0,
   adventureDepth: 0,
-  adventureNodeType: "forest",
+  adventureNodeType: "tavern_interior",
   adventureAwaitingChoice: false,
   restBuffTimeLeft: 0,
   restNoXp: false,
@@ -227,13 +228,14 @@ function getBuildStats() {
 }
 
 function locationDef() {
-  return ADVENTURE_LOCATIONS[state.adventureNodeType] ?? ADVENTURE_LOCATIONS.forest;
+  return ADVENTURE_LOCATIONS[state.adventureNodeType] ?? ADVENTURE_LOCATIONS.forest_path;
 }
 
 function mapChoiceToNode(choice) {
-  if (choice === "left") return "forest";
-  if (choice === "right") return "river";
-  return "unknown";
+  const graph = ADVENTURE_ROUTE_GRAPH[state.adventureNodeType] ?? ADVENTURE_ROUTE_GRAPH.unknown;
+  if (choice === "left") return graph.left;
+  if (choice === "right") return graph.right;
+  return graph.forward;
 }
 
 function depthScale() {
@@ -268,17 +270,22 @@ function showAdventureMap(reasonText = "") {
     adventureMapDesc.textContent = `${depthInfo} ${restText}`;
   }
   renderAdventureNodes();
+  syncAdventureButtons();
 }
 
 function renderAdventureNodes() {
   if (!adventureMapNodes) return;
   adventureMapNodes.innerHTML = "";
+  const graph = ADVENTURE_ROUTE_GRAPH[state.adventureNodeType] ?? ADVENTURE_ROUTE_GRAPH.unknown;
+  const leftLoc = ADVENTURE_LOCATIONS[graph.left] ?? ADVENTURE_LOCATIONS.unknown;
+  const forwardLoc = ADVENTURE_LOCATIONS[graph.forward] ?? ADVENTURE_LOCATIONS.unknown;
+  const rightLoc = ADVENTURE_LOCATIONS[graph.right] ?? ADVENTURE_LOCATIONS.unknown;
   const defs = [
-    { left: "8%", top: "66%", cls: "battle", text: "🌲" },
-    { left: "30%", top: "46%", cls: "unknown", text: "?" },
-    { left: "54%", top: "58%", cls: "battle", text: "🌊" },
-    { left: "78%", top: "38%", cls: "rest", text: "⛺" },
-    { left: "90%", top: "56%", cls: "unknown", text: "?" },
+    { left: "8%", top: "58%", cls: "battle", text: leftLoc.icon ?? "?" },
+    { left: "39%", top: "26%", cls: "unknown", text: forwardLoc.icon ?? "?" },
+    { left: "71%", top: "58%", cls: "battle", text: rightLoc.icon ?? "?" },
+    { left: "88%", top: "34%", cls: "rest", text: "⛺" },
+    { left: "48%", top: "66%", cls: "unknown", text: ADVENTURE_LOCATIONS[state.adventureNodeType]?.icon ?? "•" },
   ];
   for (const d of defs) {
     const node = document.createElement("div");
@@ -288,6 +295,17 @@ function renderAdventureNodes() {
     node.textContent = d.text;
     adventureMapNodes.appendChild(node);
   }
+}
+
+function syncAdventureButtons() {
+  const graph = ADVENTURE_ROUTE_GRAPH[state.adventureNodeType] ?? ADVENTURE_ROUTE_GRAPH.unknown;
+  const leftLoc = ADVENTURE_LOCATIONS[graph.left] ?? ADVENTURE_LOCATIONS.unknown;
+  const forwardLoc = ADVENTURE_LOCATIONS[graph.forward] ?? ADVENTURE_LOCATIONS.unknown;
+  const rightLoc = ADVENTURE_LOCATIONS[graph.right] ?? ADVENTURE_LOCATIONS.unknown;
+  if (pathLeftBtn) pathLeftBtn.textContent = `Лево: ${leftLoc.name}`;
+  if (pathForwardBtn) pathForwardBtn.textContent = `Прямо: ${forwardLoc.name}`;
+  if (pathRightBtn) pathRightBtn.textContent = `Право: ${rightLoc.name}`;
+  if (pathRestBtn) pathRestBtn.textContent = "Отдых (без XP)";
 }
 
 function startLocationRun(nodeType, fromRest = false) {
@@ -510,7 +528,7 @@ function showClassPanel() {
   state.skillRequested = false;
   state.remainingLives = 0;
   state.adventureDepth = 0;
-  state.adventureNodeType = "forest";
+  state.adventureNodeType = "tavern_interior";
   state.adventureAwaitingChoice = false;
   state.restBuffTimeLeft = 0;
   state.restNoXp = false;
