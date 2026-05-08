@@ -4,7 +4,6 @@ import {
   CLASS_ACTIVE_SKILLS,
   ADVENTURE_ROUTE_GRAPH,
   ADVENTURE_LOCATIONS,
-  ADVENTURE_VISUALS,
   CLASS_BASE_STATS,
   ENEMY_TYPES,
   GAME_CONFIG,
@@ -123,8 +122,6 @@ const state = {
   cameraY: 0,
   adventureDepth: 0,
   adventureNodeType: "tavern_interior",
-  locationVariant: "default",
-  nodesUntilChoice: 1,
   adventureAwaitingChoice: false,
   restBuffTimeLeft: 0,
   restNoXp: false,
@@ -235,20 +232,6 @@ function locationDef() {
   return ADVENTURE_LOCATIONS[state.adventureNodeType] ?? ADVENTURE_LOCATIONS.forest_path;
 }
 
-function locationVisualDef() {
-  return ADVENTURE_VISUALS[state.adventureNodeType] ?? ADVENTURE_VISUALS.unknown;
-}
-
-function pickLocationVariant(nodeType) {
-  const variants = ADVENTURE_LOCATIONS[nodeType]?.variants ?? [];
-  if (variants.length === 0) return "default";
-  return variants[Math.floor(Math.random() * variants.length)] ?? "default";
-}
-
-function rollNodesUntilChoice() {
-  return Math.random() < 0.5 ? 1 : 2;
-}
-
 function mapChoiceToNode(choice) {
   const graph = ADVENTURE_ROUTE_GRAPH[state.adventureNodeType] ?? ADVENTURE_ROUTE_GRAPH.unknown;
   if (choice === "left") return graph.left;
@@ -328,9 +311,7 @@ function syncAdventureButtons() {
 
 function startLocationRun(nodeType, fromRest = false) {
   state.adventureNodeType = nodeType;
-  state.locationVariant = pickLocationVariant(nodeType);
   state.adventureAwaitingChoice = false;
-  state.intermissionShown = false;
   adventureMapPanel?.classList.add("hidden");
   const loc = locationDef();
   const travelText = travelNarrative(nodeType, fromRest);
@@ -549,8 +530,6 @@ function showClassPanel() {
   state.remainingLives = 0;
   state.adventureDepth = 0;
   state.adventureNodeType = "tavern_interior";
-  state.locationVariant = "default";
-  state.nodesUntilChoice = 1;
   state.adventureAwaitingChoice = false;
   state.restBuffTimeLeft = 0;
   state.restNoXp = false;
@@ -776,8 +755,6 @@ function startLevel1Combat() {
   state.player.evasionChance = Math.min(0.6, build.evasion);
   state.input ??= Player.setupInput();
   state.remainingLives = getRaceDef()?.modifiers?.extraLives ?? 0;
-  state.locationVariant = pickLocationVariant(state.adventureNodeType);
-  state.nodesUntilChoice = rollNodesUntilChoice();
   const classSkill = CLASS_ACTIVE_SKILLS[state.heroClass];
   state.skillCooldownLeft = classSkill?.cooldown ?? 0;
   state.skillDurationLeft = 0;
@@ -863,53 +840,29 @@ function getWaveHudLabel() {
   return `L${state.level}-${id}`;
 }
 
-function renderArenaBackground() {
-  const visual = locationVisualDef();
-  const key = visual.backgroundKey ?? "tavern_bg";
-  const moodboard = state.assets.location_moodboard;
-  const variantCrop = visual.moodboardVariantCrops?.[state.locationVariant];
-  const selectedCrop = variantCrop ?? visual.moodboardCrop;
-  if (moodboard && selectedCrop) {
-    const crop = selectedCrop;
-    const sx = Math.max(0, Math.floor(crop.x * moodboard.width));
-    const sy = Math.max(0, Math.floor(crop.y * moodboard.height));
-    const sw = Math.max(8, Math.floor(crop.w * moodboard.width));
-    const sh = Math.max(8, Math.floor(crop.h * moodboard.height));
-    ctx.drawImage(moodboard, sx, sy, sw, sh, 0, 0, WORLD.width, WORLD.height);
-    ctx.fillStyle = visual.overlayColor ?? "rgba(20, 24, 32, 0.2)";
+function renderArenaBackground(levelOverride) {
+  const lv = levelOverride ?? state.level;
+  const key = lv >= 2 ? "docks_bg" : "tavern_bg";
+  const img = state.assets[key];
+  if (img) {
+    ctx.drawImage(img, 0, 0, WORLD.width, WORLD.height);
+    ctx.fillStyle = lv >= 2 ? "rgba(12, 18, 28, 0.22)" : "rgba(25, 16, 18, 0.18)";
     ctx.fillRect(0, 0, WORLD.width, WORLD.height);
-  } else {
-    const img = state.assets[key] ?? state.assets.tavern_bg ?? state.assets.docks_bg;
-    if (img) {
-      ctx.drawImage(img, 0, 0, WORLD.width, WORLD.height);
-    }
-    ctx.fillStyle = visual.overlayColor ?? "rgba(20, 24, 32, 0.2)";
-    ctx.fillRect(0, 0, WORLD.width, WORLD.height);
+    return;
   }
 
-  ctx.fillStyle = visual.baseColor ?? "#1f1f24";
+  ctx.fillStyle = lv >= 2 ? "#141c28" : "#241a1a";
   ctx.fillRect(0, 0, WORLD.width, WORLD.height);
 
-  ctx.fillStyle = visual.lineColor ?? "#2f3240";
+  ctx.fillStyle = lv >= 2 ? "#1f2a38" : "#38272a";
   for (let y = 0; y < WORLD.height; y += 30) {
     ctx.fillRect(0, y, WORLD.width, 2);
   }
 
-  ctx.fillStyle = visual.accentColor ?? "#4a4f62";
+  ctx.fillStyle = "#4a3022";
   ctx.fillRect(18, 18, 150, 40);
   ctx.fillRect(WORLD.width - 190, 18, 170, 35);
   ctx.fillRect(WORLD.width - 210, WORLD.height - 52, 190, 32);
-
-  if (state.locationVariant === "rain") {
-    ctx.strokeStyle = "rgba(196, 224, 255, 0.22)";
-    ctx.lineWidth = 1;
-    for (let x = -80; x < WORLD.width + 80; x += 26) {
-      ctx.beginPath();
-      ctx.moveTo(x + ((state.elapsedSeconds * 130) % 26), 0);
-      ctx.lineTo(x - 18 + ((state.elapsedSeconds * 130) % 26), WORLD.height);
-      ctx.stroke();
-    }
-  }
 }
 
 function updateCamera() {
@@ -1259,18 +1212,10 @@ function update(deltaSeconds) {
     if (!state.intermissionShown) {
       state.intermissionShown = true;
       state.adventureDepth += 1;
-      state.nodesUntilChoice = Math.max(0, state.nodesUntilChoice - 1);
-      if (state.nodesUntilChoice <= 0) {
-        state.nodesUntilChoice = rollNodesUntilChoice();
-        const travelText = state.restNoXp
-          ? "Вы шли спокойно и без спешки, телега довезла вас до следующего перекрестка."
-          : "Пыль осела после боя. Впереди новый перекресток и новое решение.";
-        showAdventureMap(travelText);
-      } else {
-        const autoNode = mapChoiceToNode("forward");
-        state.restNoXp = false;
-        startLocationRun(autoNode, false);
-      }
+      const travelText = state.restNoXp
+        ? "Вы шли спокойно и без спешки, телега довезла вас до следующего перекрестка."
+        : "Пыль осела после боя. Впереди новый перекресток и новое решение.";
+      showAdventureMap(travelText);
     }
   }
 }
@@ -1478,7 +1423,7 @@ function loop(ts) {
     xpToNext: xpProgress.xpToNext,
     elapsed: state.elapsedSeconds,
     fps: state.fps,
-    status: `${locationDef().name} (${state.adventureNodeType}/${state.locationVariant}) · Угроза ${state.adventureDepth + 1} · ` + (state.skillActive
+    status: `${locationDef().name} · Угроза ${state.adventureDepth + 1} · ` + (state.skillActive
       ? `${state.result} · ${CLASS_ACTIVE_SKILLS[state.heroClass]?.name ?? "Скилл"} активен`
       : `${state.result} · ${CLASS_ACTIVE_SKILLS[state.heroClass]?.name ?? "Скилл"} CD ${Math.ceil(state.skillCooldownLeft)}s`),
     perks: getPerkListText(),
@@ -1506,7 +1451,6 @@ function chooseAdventurePath(choice) {
     state.restBuffTimeLeft = 35;
     state.restNoXp = true;
     state.adventureDepth += 1;
-    state.nodesUntilChoice = rollNodesUntilChoice();
     showAdventureMap("Вы отдохнули на безопасной дороге. Повозка довезла вас до следующего перекрестка.");
     return;
   }
