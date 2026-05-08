@@ -910,6 +910,18 @@ function renderArenaBackground() {
       ctx.stroke();
     }
   }
+
+  if (state.locationVariant === "foggy" || state.locationVariant === "mist") {
+    const fogAlpha = state.locationVariant === "mist" ? 0.2 : 0.15;
+    ctx.fillStyle = `rgba(210, 228, 236, ${fogAlpha})`;
+    ctx.fillRect(0, 0, WORLD.width, WORLD.height);
+  }
+
+  if (state.locationVariant === "siege") {
+    const pulse = 0.12 + 0.06 * (Math.sin(state.elapsedSeconds * 2.2) * 0.5 + 0.5);
+    ctx.fillStyle = `rgba(255, 128, 92, ${pulse.toFixed(3)})`;
+    ctx.fillRect(0, 0, WORLD.width, WORLD.height);
+  }
 }
 
 function updateCamera() {
