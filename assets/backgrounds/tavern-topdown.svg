@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <defs>
+    <linearGradient id="woodA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6a492f"/>
+      <stop offset="100%" stop-color="#4a3222"/>
+    </linearGradient>
+    <linearGradient id="woodB" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7a5436"/>
+      <stop offset="100%" stop-color="#563825"/>
+    </linearGradient>
+    <radialGradient id="rugGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#6b1f1f"/>
+      <stop offset="100%" stop-color="#3b1212"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="960" height="540" fill="#2a1d17"/>
+
+  <!-- Floor planks -->
+  <g opacity="0.95">
+    <rect x="0" y="0" width="960" height="540" fill="url(#woodA)"/>
+    <rect x="0" y="26" width="960" height="20" fill="url(#woodB)"/>
+    <rect x="0" y="72" width="960" height="20" fill="url(#woodB)"/>
+    <rect x="0" y="118" width="960" height="20" fill="url(#woodB)"/>
+    <rect x="0" y="164" width="960" height="20" fill="url(#woodB)"/>
+    <rect x="0" y="210" width="960" height="20" fill="url(#woodB)"/>
+    <rect x="0" y="256" width="960" height="20" fill="url(#woodB)"/>
+    <rect x="0" y="302" width="960" height="20" fill="url(#woodB)"/>
+    <rect x="0" y="348" width="960" height="20" fill="url(#woodB)"/>
+    <rect x="0" y="394" width="960" height="20" fill="url(#woodB)"/>
+    <rect x="0" y="440" width="960" height="20" fill="url(#woodB)"/>
+    <rect x="0" y="486" width="960" height="20" fill="url(#woodB)"/>
+  </g>
+
+  <!-- Bar counter -->
+  <rect x="675" y="24" width="255" height="84" rx="8" fill="#3a2418"/>
+  <rect x="682" y="32" width="241" height="22" rx="6" fill="#7a4f30"/>
+  <rect x="698" y="62" width="34" height="38" rx="5" fill="#6e4c3d"/>
+  <rect x="742" y="62" width="34" height="38" rx="5" fill="#6e4c3d"/>
+  <rect x="786" y="62" width="34" height="38" rx="5" fill="#6e4c3d"/>
+  <rect x="830" y="62" width="34" height="38" rx="5" fill="#6e4c3d"/>
+
+  <!-- Side tables -->
+  <g>
+    <circle cx="104" cy="74" r="28" fill="#4a2d1f"/>
+    <circle cx="104" cy="74" r="20" fill="#845635"/>
+    <rect x="77" y="101" width="18" height="14" rx="3" fill="#6a452d"/>
+    <rect x="113" y="101" width="18" height="14" rx="3" fill="#6a452d"/>
+  </g>
+  <g>
+    <circle cx="842" cy="454" r="32" fill="#4a2d1f"/>
+    <circle cx="842" cy="454" r="23" fill="#875939"/>
+    <rect x="808" y="488" width="19" height="15" rx="3" fill="#6a452d"/>
+    <rect x="857" y="488" width="19" height="15" rx="3" fill="#6a452d"/>
+  </g>
+
+  <!-- Main combat rug -->
+  <ellipse cx="480" cy="282" rx="210" ry="128" fill="url(#rugGlow)"/>
+  <ellipse cx="480" cy="282" rx="195" ry="114" fill="none" stroke="#a87a45" stroke-width="5"/>
+  <ellipse cx="480" cy="282" rx="160" ry="90" fill="none" stroke="#cfa46a" stroke-width="3" opacity="0.8"/>
+
+  <!-- Debris -->
+  <rect x="236" y="430" width="42" height="10" rx="4" fill="#714b33" transform="rotate(-11 236 430)"/>
+  <rect x="620" y="388" width="34" height="8" rx="3" fill="#6e4831" transform="rotate(18 620 388)"/>
+  <rect x="353" y="103" width="30" height="8" rx="3" fill="#6e4831" transform="rotate(-21 353 103)"/>
+</svg>

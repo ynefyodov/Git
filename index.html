@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DND Tavern Prototype</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="hud">
+      <div class="hud-row">
+        <span>HP: <strong id="hp-value">0 / 0</strong></span>
+        <span>Класс: <strong id="class-value">—</strong></span>
+        <span>Уровень: <strong id="level-value">1</strong></span>
+        <span>Волна: <strong id="wave-value">-</strong></span>
+        <span>Враги: <strong id="enemies-value">0</strong></span>
+        <span>Победы: <strong id="kills-value">0</strong></span>
+        <span>XP: <strong id="xp-value">0/18</strong></span>
+      </div>
+      <div class="hud-row">
+        <span>Время: <strong id="time-value">0.0s</strong></span>
+        <span>FPS: <strong id="fps-value">0</strong></span>
+        <span>Статус: <strong id="status-value">Не начато</strong></span>
+      </div>
+      <div class="hud-row">
+        <span>Черты: <strong id="perks-value">—</strong></span>
+        <span>Последняя черта: <strong id="upgrade-value">—</strong></span>
+      </div>
+    </section>
+
+    <section class="arena-wrap">
+      <canvas id="game-canvas" width="960" height="540" aria-label="Tavern Arena"></canvas>
+      <aside id="class-panel" class="class-panel" aria-live="polite">
+        <h3>Создание героя</h3>
+        <p>Выбери <strong>класс</strong>, затем — <strong>стартовую черту</strong>. Остальные черты только <strong>между уровнями</strong> (не в бою).</p>
+        <div class="class-buttons" id="class-buttons"></div>
+      </aside>
+      <aside id="intro-panel" class="intro-panel hidden" aria-live="polite">
+        <h3>Таверна «Последний кубик»</h3>
+        <p id="intro-class-blurb" class="intro-class-blurb"></p>
+        <div id="intro-text" class="intro-text"></div>
+        <button id="battle-btn" type="button" class="primary-btn">В бой</button>
+      </aside>
+      <aside id="intermission-panel" class="intermission-panel hidden" aria-live="polite">
+        <h3>Вторая локация</h3>
+        <div id="intermission-text" class="intro-text"></div>
+        <button id="continue-btn" type="button" class="primary-btn">Продолжить</button>
+      </aside>
+      <aside id="upgrade-panel" class="upgrade-panel hidden" aria-live="polite">
+        <h3 id="upgrade-title">Черта</h3>
+        <p id="upgrade-desc">Выбери одну черту.</p>
+        <div id="upgrade-options" class="upgrade-options"></div>
+      </aside>
+    </section>
+
+    <section id="coop-network" class="coop-network">
+      <h4>Онлайн-лобби (Web)</h4>
+      <p class="coop-hint">GitHub Pages только хостит клиент. Для мультиплеера нужен отдельный lobby relay (Node/WebSocket), например на VPS или локально с туннелем.</p>
+      <div class="coop-row">
+        <input id="coop-ws-url" type="text" spellcheck="false" value="ws://127.0.0.1:8765" aria-label="WebSocket URL" />
+        <input id="coop-room-id" type="text" spellcheck="false" value="public" aria-label="Room ID" />
+        <input id="coop-player-name" type="text" spellcheck="false" value="Player" aria-label="Player name" />
+        <button id="coop-join-btn" type="button" class="coop-btn">Войти в лобби</button>
+        <button id="coop-ready-btn" type="button" class="coop-btn" disabled>Готов</button>
+        <button id="coop-start-btn" type="button" class="coop-btn" disabled>Старт (хост)</button>
+      </div>
+      <p id="coop-status" class="coop-status" aria-live="polite"></p>
+      <div class="coop-host-share" aria-live="polite">
+        <p class="coop-share-label">Комната</p>
+        <div id="coop-room-players" class="coop-host-url-rows"></div>
+      </div>
+      <p class="coop-hint"><strong>Хост:</strong> первый в комнате, запускает матч. <strong>Остальные:</strong> ставят Ready и ждут старта. Управление в бою у гостя: стрелки + пробел.</p>
+    </section>
+
+    <section class="controls">
+      <button id="restart-btn" type="button" disabled>Restart</button>
+      <p>Ходьба: WASD / ЦФЫВ или стрелки. Прыжок: Пробел. Сначала класс и стартовая черта, потом пролог и бой. За XP от убийств открываются черты (если порог достигнут в бою, выбор откроется сразу). Restart — новый лист.</p>
+    </section>
+  </main>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
