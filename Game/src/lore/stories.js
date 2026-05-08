@@ -103,3 +103,16 @@ export const STORIES = [
 export function pickRandomStory() {
   return STORIES[Math.floor(Math.random() * STORIES.length)];
 }
+
+export function travelNarrative(nodeType, rested = false) {
+  if (rested) {
+    return "Путники сбавляют темп, идут по безопасной дороге и под вечер пересаживаются в телегу до следующего перекрестка.";
+  }
+  if (nodeType === "forest") {
+    return "Тропа уходит под кроны деревьев. Тишина обманчива: впереди редкие, но смертельно опасные стычки.";
+  }
+  if (nodeType === "river") {
+    return "Дорога выводит к реке: сырые мостки и крики из камышей. Похоже, мурлоков здесь слишком много.";
+  }
+  return "Знак на развилке стерт временем. Впереди неизвестный участок, где правила каждый раз меняются.";
+}

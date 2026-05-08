@@ -228,6 +228,64 @@ body {
   padding: 20px;
 }
 
+.adventure-map-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgba(9, 10, 14, 0.9);
+  border-radius: 8px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.adventure-map-panel h3,
+.adventure-map-panel p {
+  margin: 0;
+}
+
+.adventure-map-desc {
+  max-width: 760px;
+  color: #decda8;
+  line-height: 1.35;
+}
+
+.adventure-map-nodes {
+  width: min(820px, 94%);
+  min-height: 150px;
+  border: 1px dashed #8a7358;
+  border-radius: 8px;
+  position: relative;
+  background: rgba(22, 16, 16, 0.5);
+}
+
+.adventure-map-node {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid #c9b27a;
+  display: grid;
+  place-items: center;
+  color: #f6ebd6;
+  font-size: 14px;
+  background: rgba(75, 53, 31, 0.85);
+}
+
+.adventure-map-node.battle { border-color: #d78f5f; }
+.adventure-map-node.rest { border-color: #6eb78c; }
+.adventure-map-node.unknown { border-color: #9f8ed9; }
+
+.adventure-map-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .upgrade-panel h3,
 .upgrade-panel p {
   margin: 0;
